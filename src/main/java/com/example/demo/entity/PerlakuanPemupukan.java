@@ -4,25 +4,20 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "perlakuan_pemupukan")
-public class PerlakuanPemupukan {
+@PrimaryKeyJoinColumn(name = "perlakuan_id")
+@DiscriminatorValue("PEMUPUKAN")
+public class PerlakuanPemupukan extends Perlakuan {
 
-    @Id
-    @Column(name = "perlakuan_id")
-    private Long perlakuanId;
-
-    public Long getPerlakuanId() { return perlakuanId; }
-    public void setPerlakuanId(Long perlakuanId) { this.perlakuanId = perlakuanId; }
-
+    @Enumerated(EnumType.STRING)
     @Column(name = "metode_pupuk", nullable = false)
-    private String metodePupuk;
-
-    public String getMetodePupuk() { return metodePupuk; }
-    public void setMetodePupuk(String metodePupuk) { this.metodePupuk = metodePupuk; }
+    private MetodePupuk metodePupuk;
 
     @Column(name = "volume_air_kocor_ml")
     private Integer volumeAirKocorMl;
 
+    public MetodePupuk getMetodePupuk() { return metodePupuk; }
+    public void setMetodePupuk(MetodePupuk metodePupuk) { this.metodePupuk = metodePupuk; }
+
     public Integer getVolumeAirKocorMl() { return volumeAirKocorMl; }
     public void setVolumeAirKocorMl(Integer volumeAirKocorMl) { this.volumeAirKocorMl = volumeAirKocorMl; }
-
 }

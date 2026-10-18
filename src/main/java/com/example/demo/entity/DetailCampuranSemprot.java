@@ -12,31 +12,32 @@ public class DetailCampuranSemprot {
     @Column(name = "id")
     private Long id;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "penyemprotan_id", nullable = false)
+    private PerlakuanPenyemprotan penyemprotan;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "bahan_id", nullable = false)
+    private InventarisBahan bahan;
+
+    @Column(name = "dosis_per_liter", nullable = false, precision = 6, scale = 2)
+    private BigDecimal dosisPerLiter;
+
+    @Column(name = "total_terpakai", nullable = false, precision = 8, scale = 2)
+    private BigDecimal totalTerpakai;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    @Column(name = "penyemprotan_id", nullable = false)
-    private Long penyemprotanId;
+    public PerlakuanPenyemprotan getPenyemprotan() { return penyemprotan; }
+    public void setPenyemprotan(PerlakuanPenyemprotan penyemprotan) { this.penyemprotan = penyemprotan; }
 
-    public Long getPenyemprotanId() { return penyemprotanId; }
-    public void setPenyemprotanId(Long penyemprotanId) { this.penyemprotanId = penyemprotanId; }
-
-    @Column(name = "bahan_id", nullable = false)
-    private Long bahanId;
-
-    public Long getBahanId() { return bahanId; }
-    public void setBahanId(Long bahanId) { this.bahanId = bahanId; }
-
-    @Column(name = "dosis_per_liter", nullable = false)
-    private BigDecimal dosisPerLiter;
+    public InventarisBahan getBahan() { return bahan; }
+    public void setBahan(InventarisBahan bahan) { this.bahan = bahan; }
 
     public BigDecimal getDosisPerLiter() { return dosisPerLiter; }
     public void setDosisPerLiter(BigDecimal dosisPerLiter) { this.dosisPerLiter = dosisPerLiter; }
 
-    @Column(name = "total_terpakai", nullable = false)
-    private BigDecimal totalTerpakai;
-
     public BigDecimal getTotalTerpakai() { return totalTerpakai; }
     public void setTotalTerpakai(BigDecimal totalTerpakai) { this.totalTerpakai = totalTerpakai; }
-
 }
