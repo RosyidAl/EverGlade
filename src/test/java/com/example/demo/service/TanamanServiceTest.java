@@ -30,6 +30,7 @@ class TanamanServiceTest {
 
     private Tanaman tanaman;
 
+    /** Menyiapkan tanaman aktif dengan tanggal tanam hari ini untuk setiap pengujian. */
     @BeforeEach
     void setUp() {
         tanaman = new Tanaman();
@@ -39,6 +40,7 @@ class TanamanServiceTest {
         tanaman.setTanggalTanam(LocalDate.now());
     }
 
+    /** Memastikan penonaktifan menyimpan status, tanggal, dan alasan selesai tanaman. */
     @Test
     @DisplayName("Berhasil menonaktifkan tanaman (Soft Delete) beserta tanggal dan alasan")
     void testNonaktifkanTanaman_Berhasil() {
@@ -53,6 +55,7 @@ class TanamanServiceTest {
         verify(repository).save(tanaman);
     }
 
+    /** Memastikan penonaktifan tanaman yang sudah tidak aktif ditolak tanpa penyimpanan. */
     @Test
     @DisplayName("Gagal menonaktifkan tanaman jika tanaman sudah non-aktif")
     void testNonaktifkanTanaman_SudahNonaktif() {
@@ -63,6 +66,7 @@ class TanamanServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /** Memastikan pencarian ID tanaman yang tidak ada melempar ResourceNotFoundException. */
     @Test
     @DisplayName("Throw ResourceNotFoundException saat tanaman tidak ada")
     void testAmbilBerdasarkanId_NotFound() {

@@ -28,21 +28,51 @@ public class LogPemeriksaanService {
     @Autowired
     private InventarisBahanService inventarisBahanService;
 
+    /**
+     * Mengambil seluruh log pemeriksaan tanaman.
+     *
+     * @return daftar log pemeriksaan
+     */
     public List<LogPemeriksaan> ambilSemua() {
         return repository.findAll();
     }
 
+    /**
+     * Mengambil log pemeriksaan berdasarkan ID.
+     *
+     * @param id ID log pemeriksaan
+     * @return log yang ditemukan
+     * @throws ResourceNotFoundException jika ID log tidak ditemukan
+     */
     public LogPemeriksaan ambilBerdasarkanId(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Log pemeriksaan tidak ditemukan dengan ID: " + id));
     }
 
+    /**
+     * Memastikan tanaman ada lalu mengambil lognya dari waktu terbaru.
+     *
+     * @param tanamanId ID tanaman pemilik log
+     * @return daftar log dalam urutan waktu pemeriksaan menurun
+     * @throws ResourceNotFoundException jika ID tanaman tidak ditemukan
+     */
     public List<LogPemeriksaan> ambilBerdasarkanTanamanId(Long tanamanId) {
         // Validasi tanaman ada
         tanamanService.ambilBerdasarkanId(tanamanId);
         return repository.findByTanamanIdOrderByWaktuPemeriksaanDesc(tanamanId);
     }
 
+    /**
+     * Memvalidasi dan menyimpan log, relasi kondisi, serta perlakuannya dalam satu transaksi.
+     * Penggunaan bahan pada pemupukan dan penyemprotan mengurangi stok; kegagalan
+     * membatalkan perubahan database dalam transaksi.
+     *
+     * @param log log dengan ID tanaman dan paling banyak satu kondisi vegetatif
+     * @return log yang tersimpan
+     * @throws BusinessValidationException jika ID wajib, kondisi vegetatif, atau detail bahan tidak valid
+     * @throws ResourceNotFoundException jika tanaman atau bahan tidak ditemukan
+     * @throws com.example.demo.exception.InsufficientStockException jika stok bahan perlakuan tidak mencukupi
+     */
     @Transactional
     public LogPemeriksaan simpanLog(LogPemeriksaan log) {
         if (log.getTanaman() == null || log.getTanaman().getId() == null) {
@@ -86,6 +116,13 @@ public class LogPemeriksaanService {
         return repository.save(log);
     }
 
+    /**
+     * Memvalidasi ID bahan unik, menghubungkan detail, dan mengurangi stok pemupukan.
+     * Daftar bahan null atau kosong tidak diproses.
+     *
+     * @param pemupukan perlakuan yang diproses dalam transaksi penyimpanan log
+     * @throws BusinessValidationException jika ID bahan kosong, duplikat, atau jumlah pemakaian tidak valid
+     */
     private void prosesPemupukan(PerlakuanPemupukan pemupukan) {
         if (pemupukan.getDetailBahanList() == null || pemupukan.getDetailBahanList().isEmpty()) {
             return;
@@ -111,6 +148,13 @@ public class LogPemeriksaanService {
         }
     }
 
+    /**
+     * Memvalidasi ID bahan unik, menghubungkan detail, dan mengurangi stok penyemprotan.
+     * Daftar campuran null atau kosong tidak diproses.
+     *
+     * @param penyemprotan perlakuan yang diproses dalam transaksi penyimpanan log
+     * @throws BusinessValidationException jika ID bahan kosong, duplikat, atau jumlah pemakaian tidak valid
+     */
     private void prosesPenyemprotan(PerlakuanPenyemprotan penyemprotan) {
         if (penyemprotan.getDetailCampuranList() == null || penyemprotan.getDetailCampuranList().isEmpty()) {
             return;

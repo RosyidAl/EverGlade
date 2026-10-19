@@ -17,6 +17,12 @@ public class TanamanService {
     @Autowired
     private TanamanRepository repository;
 
+    /**
+     * Mengambil tanaman dengan filter aktif opsional.
+     *
+     * @param hanyaAktif true untuk hanya tanaman aktif; false atau null untuk semua tanaman
+     * @return daftar tanaman
+     */
     public List<Tanaman> ambilSemua(Boolean hanyaAktif) {
         if (Boolean.TRUE.equals(hanyaAktif)) {
             return repository.findByStatusAktif(true);
@@ -24,11 +30,24 @@ public class TanamanService {
         return repository.findAll();
     }
 
+    /**
+     * Mengambil tanaman berdasarkan ID.
+     *
+     * @param id ID tanaman
+     * @return tanaman yang ditemukan
+     * @throws ResourceNotFoundException jika ID tanaman tidak ditemukan
+     */
     public Tanaman ambilBerdasarkanId(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tanaman tidak ditemukan dengan ID: " + id));
     }
 
+    /**
+     * Menyimpan tanaman dengan tanggal hari ini dan status aktif jika belum diisi.
+     *
+     * @param tanaman tanaman yang akan disimpan
+     * @return tanaman yang tersimpan
+     */
     @Transactional
     public Tanaman simpan(Tanaman tanaman) {
         if (tanaman.getTanggalTanam() == null) {
@@ -40,6 +59,14 @@ public class TanamanService {
         return repository.save(tanaman);
     }
 
+    /**
+     * Memperbarui informasi tanaman dengan mempertahankan status dan data penyelesaiannya.
+     *
+     * @param id ID tanaman
+     * @param dataBaru informasi pengganti tanaman
+     * @return tanaman yang diperbarui
+     * @throws ResourceNotFoundException jika ID tanaman tidak ditemukan
+     */
     @Transactional
     public Tanaman perbarui(Long id, Tanaman dataBaru) {
         Tanaman existing = ambilBerdasarkanId(id);
@@ -51,6 +78,15 @@ public class TanamanService {
         return repository.save(existing);
     }
 
+    /**
+     * Menonaktifkan tanaman serta mencatat tanggal hari ini dan alasan selesai.
+     *
+     * @param id ID tanaman
+     * @param keterangan alasan selesai; null menggunakan SELESAI
+     * @return tanaman yang dinonaktifkan
+     * @throws ResourceNotFoundException jika ID tanaman tidak ditemukan
+     * @throws BusinessValidationException jika tanaman sudah tidak aktif
+     */
     @Transactional
     public Tanaman nonaktifkan(Long id, String keterangan) {
         Tanaman existing = ambilBerdasarkanId(id);
@@ -63,6 +99,13 @@ public class TanamanService {
         return repository.save(existing);
     }
 
+    /**
+     * Mengaktifkan kembali tanaman dan menghapus tanggal serta alasan selesai.
+     *
+     * @param id ID tanaman
+     * @return tanaman yang diaktifkan
+     * @throws ResourceNotFoundException jika ID tanaman tidak ditemukan
+     */
     @Transactional
     public Tanaman aktifkanKembali(Long id) {
         Tanaman existing = ambilBerdasarkanId(id);

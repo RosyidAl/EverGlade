@@ -23,27 +23,56 @@ public class LogPemeriksaanController {
     @Autowired
     private InventarisBahanService inventarisBahanService;
 
+    /**
+     * Mengambil seluruh log pemeriksaan tanaman.
+     *
+     * @return daftar log pemeriksaan
+     */
     @GetMapping
     public List<LogPemeriksaan> ambilSemua() {
         return service.ambilSemua();
     }
 
+    /**
+     * Mengambil log pemeriksaan berdasarkan ID.
+     *
+     * @param id ID log pemeriksaan
+     * @return log yang ditemukan
+     */
     @GetMapping("/{id}")
     public LogPemeriksaan ambilBerdasarkanId(@PathVariable Long id) {
         return service.ambilBerdasarkanId(id);
     }
 
+    /**
+     * Mengambil log tanaman dari waktu pemeriksaan terbaru.
+     *
+     * @param tanamanId ID tanaman yang diperiksa
+     * @return daftar log tanaman yang diminta
+     */
     @GetMapping("/tanaman/{tanamanId}")
     public List<LogPemeriksaan> ambilBerdasarkanTanaman(@PathVariable Long tanamanId) {
         return service.ambilBerdasarkanTanamanId(tanamanId);
     }
 
+    /**
+     * Menyimpan log pemeriksaan beserta perlakuan dan pengurangan stoknya.
+     *
+     * @param baru log pemeriksaan yang akan disimpan
+     * @return log tersimpan dengan status HTTP 201
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public LogPemeriksaan tambah(@RequestBody LogPemeriksaan baru) {
         return service.simpanLog(baru);
     }
 
+    /**
+     * Memetakan bahan permintaan dan menyimpan penyemprotan satu tangki untuk banyak tanaman.
+     *
+     * @param request tanaman tujuan, volume tangki, catatan, dan total bahan yang digunakan
+     * @return log per tanaman dengan status HTTP 201
+     */
     @PostMapping("/batch-penyemprotan")
     @ResponseStatus(HttpStatus.CREATED)
     public List<LogPemeriksaan> tambahBatchPenyemprotan(@RequestBody BatchSemprotRequest request) {

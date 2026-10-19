@@ -38,6 +38,7 @@ class LogPemeriksaanServiceTest {
     private Tanaman tanaman;
     private InventarisBahan pupuk;
 
+    /** Menyiapkan tanaman dan bahan pupuk sebagai fixture setiap pengujian log. */
     @BeforeEach
     void setUp() {
         tanaman = new Tanaman();
@@ -51,6 +52,7 @@ class LogPemeriksaanServiceTest {
         pupuk.setStokSaatIni(new BigDecimal("1000.00"));
     }
 
+    /** Memastikan lebih dari satu kondisi vegetatif ditolak sebelum log disimpan. */
     @Test
     @DisplayName("Gagal menyimpan log jika kondisi vegetatif lebih dari 1")
     void testSimpanLog_GagalKondisiVegetatifGanda() {
@@ -73,6 +75,7 @@ class LogPemeriksaanServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /** Memastikan penyimpanan log pemupukan memanggil pengurangan stok bahan. */
     @Test
     @DisplayName("Berhasil simpan log pemupukan dan memicu pemotongan stok")
     void testSimpanLog_PemupukanMemotongStok() {
@@ -101,6 +104,7 @@ class LogPemeriksaanServiceTest {
         verify(repository).save(log);
     }
 
+    /** Memastikan bahan duplikat ditolak sebelum pengurangan stok dan penyimpanan log. */
     @Test
     @DisplayName("Gagal jika ada bahan duplikat dalam satu racikan pemupukan")
     void testSimpanLog_BahanDuplikatGagal() {
@@ -129,6 +133,7 @@ class LogPemeriksaanServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /** Memastikan penyemprotan massal memotong stok sekali dan menyimpan satu log per tanaman. */
     @Test
     @DisplayName("Batch penyemprotan memotong stok sekali dan membuat log per tanaman")
     void testBatchPenyemprotan_Berhasil() {

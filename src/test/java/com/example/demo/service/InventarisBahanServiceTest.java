@@ -33,6 +33,7 @@ class InventarisBahanServiceTest {
 
     private InventarisBahan bahan;
 
+    /** Menyiapkan bahan aktif dengan stok awal 500 untuk setiap pengujian. */
     @BeforeEach
     void setUp() {
         bahan = new InventarisBahan();
@@ -45,6 +46,7 @@ class InventarisBahanServiceTest {
         bahan.setIsActive(true);
     }
 
+    /** Memastikan pengurangan stok yang mencukupi menyimpan saldo baru. */
     @Test
     @DisplayName("Berhasil mengurangi stok saat stok mencukupi")
     void testKurangiStok_Berhasil() {
@@ -58,6 +60,7 @@ class InventarisBahanServiceTest {
         verify(repository).save(bahan);
     }
 
+    /** Memastikan kekurangan stok melempar exception tanpa menyimpan bahan. */
     @Test
     @DisplayName("Gagal dan melempar InsufficientStockException saat stok kurang")
     void testKurangiStok_StokKurang() {
@@ -70,6 +73,7 @@ class InventarisBahanServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /** Memastikan bahan yang diarsipkan tidak dapat dikurangi stoknya. */
     @Test
     @DisplayName("Gagal mengurangi stok jika bahan tidak aktif")
     void testKurangiStok_BahanTidakAktif() {
@@ -83,6 +87,7 @@ class InventarisBahanServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /** Memastikan penambahan stok menyimpan jumlah persediaan terbaru. */
     @Test
     @DisplayName("Berhasil menambah stok")
     void testTambahStok_Berhasil() {
