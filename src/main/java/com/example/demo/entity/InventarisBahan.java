@@ -13,60 +13,63 @@ public class InventarisBahan {
     @Column(name = "id")
     private Long id;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    @Column(name = "nama_produk", nullable = false)
+    @Column(name = "nama_produk", nullable = false, length = 100)
     private String namaProduk;
 
-    public String getNamaProduk() { return namaProduk; }
-    public void setNamaProduk(String namaProduk) { this.namaProduk = namaProduk; }
-
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipe_bahan", nullable = false)
-    private String tipeBahan;
+    private TipeBahan tipeBahan;
 
-    public String getTipeBahan() { return tipeBahan; }
-    public void setTipeBahan(String tipeBahan) { this.tipeBahan = tipeBahan; }
-
-    @Column(name = "kategori_detail")
+    @Column(name = "kategori_detail", length = 50)
     private String kategoriDetail;
 
-    public String getKategoriDetail() { return kategoriDetail; }
-    public void setKategoriDetail(String kategoriDetail) { this.kategoriDetail = kategoriDetail; }
-
+    @Enumerated(EnumType.STRING)
     @Column(name = "bentuk_fisik", nullable = false)
-    private String bentukFisik;
+    private BentukFisik bentukFisik;
 
-    public String getBentukFisik() { return bentukFisik; }
-    public void setBentukFisik(String bentukFisik) { this.bentukFisik = bentukFisik; }
-
-    @Column(name = "stok_saat_ini", nullable = false)
+    @Column(name = "stok_saat_ini", nullable = false, precision = 10, scale = 2)
     private BigDecimal stokSaatIni;
 
-    public BigDecimal getStokSaatIni() { return stokSaatIni; }
-    public void setStokSaatIni(BigDecimal stokSaatIni) { this.stokSaatIni = stokSaatIni; }
-
+    @Enumerated(EnumType.STRING)
     @Column(name = "satuan_stok", nullable = false)
-    private String satuanStok;
-
-    public String getSatuanStok() { return satuanStok; }
-    public void setSatuanStok(String satuanStok) { this.satuanStok = satuanStok; }
+    private SatuanStok satuanStok;
 
     @Column(name = "tanggal_kadaluarsa")
     private LocalDate tanggalKadaluarsa;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(name = "catatan", columnDefinition = "TEXT")
+    private String catatan;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getNamaProduk() { return namaProduk; }
+    public void setNamaProduk(String namaProduk) { this.namaProduk = namaProduk; }
+
+    public TipeBahan getTipeBahan() { return tipeBahan; }
+    public void setTipeBahan(TipeBahan tipeBahan) { this.tipeBahan = tipeBahan; }
+
+    public String getKategoriDetail() { return kategoriDetail; }
+    public void setKategoriDetail(String kategoriDetail) { this.kategoriDetail = kategoriDetail; }
+
+    public BentukFisik getBentukFisik() { return bentukFisik; }
+    public void setBentukFisik(BentukFisik bentukFisik) { this.bentukFisik = bentukFisik; }
+
+    public BigDecimal getStokSaatIni() { return stokSaatIni; }
+    public void setStokSaatIni(BigDecimal stokSaatIni) { this.stokSaatIni = stokSaatIni; }
+
+    public SatuanStok getSatuanStok() { return satuanStok; }
+    public void setSatuanStok(SatuanStok satuanStok) { this.satuanStok = satuanStok; }
+
     public LocalDate getTanggalKadaluarsa() { return tanggalKadaluarsa; }
     public void setTanggalKadaluarsa(LocalDate tanggalKadaluarsa) { this.tanggalKadaluarsa = tanggalKadaluarsa; }
 
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
-    @Column(name = "catatan")
-    private String catatan;
-
     public String getCatatan() { return catatan; }
     public void setCatatan(String catatan) { this.catatan = catatan; }
-
 }

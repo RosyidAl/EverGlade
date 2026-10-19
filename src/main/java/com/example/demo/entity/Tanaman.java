@@ -1,7 +1,10 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tanaman")
@@ -12,43 +15,49 @@ public class Tanaman {
     @Column(name = "id")
     private Long id;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    @Column(name = "nama_tanaman", nullable = false)
+    @Column(name = "nama_tanaman", nullable = false, length = 100)
     private String namaTanaman;
 
-    public String getNamaTanaman() { return namaTanaman; }
-    public void setNamaTanaman(String namaTanaman) { this.namaTanaman = namaTanaman; }
-
-    @Column(name = "jenis_varietas")
+    @Column(name = "jenis_varietas", length = 100)
     private String jenisVarietas;
 
-    public String getJenisVarietas() { return jenisVarietas; }
-    public void setJenisVarietas(String jenisVarietas) { this.jenisVarietas = jenisVarietas; }
-
-    @Column(name = "lokasi_tanam")
+    @Column(name = "lokasi_tanam", length = 100)
     private String lokasiTanam;
-
-    public String getLokasiTanam() { return lokasiTanam; }
-    public void setLokasiTanam(String lokasiTanam) { this.lokasiTanam = lokasiTanam; }
 
     @Column(name = "tanggal_tanam", nullable = false)
     private LocalDate tanggalTanam;
 
+    @Column(name = "status_aktif", nullable = false)
+    private Boolean statusAktif = true;
+
+    @Column(name = "catatan", columnDefinition = "TEXT")
+    private String catatan;
+
+    @OneToMany(mappedBy = "tanaman", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<LogPemeriksaan> logPemeriksaanList = new ArrayList<>();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getNamaTanaman() { return namaTanaman; }
+    public void setNamaTanaman(String namaTanaman) { this.namaTanaman = namaTanaman; }
+
+    public String getJenisVarietas() { return jenisVarietas; }
+    public void setJenisVarietas(String jenisVarietas) { this.jenisVarietas = jenisVarietas; }
+
+    public String getLokasiTanam() { return lokasiTanam; }
+    public void setLokasiTanam(String lokasiTanam) { this.lokasiTanam = lokasiTanam; }
+
     public LocalDate getTanggalTanam() { return tanggalTanam; }
     public void setTanggalTanam(LocalDate tanggalTanam) { this.tanggalTanam = tanggalTanam; }
-
-    @Column(name = "status_aktif", nullable = false)
-    private Boolean statusAktif;
 
     public Boolean getStatusAktif() { return statusAktif; }
     public void setStatusAktif(Boolean statusAktif) { this.statusAktif = statusAktif; }
 
-    @Column(name = "catatan")
-    private String catatan;
-
     public String getCatatan() { return catatan; }
     public void setCatatan(String catatan) { this.catatan = catatan; }
 
+    public List<LogPemeriksaan> getLogPemeriksaanList() { return logPemeriksaanList; }
+    public void setLogPemeriksaanList(List<LogPemeriksaan> logPemeriksaanList) { this.logPemeriksaanList = logPemeriksaanList; }
 }

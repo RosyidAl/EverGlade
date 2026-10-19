@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -14,6 +15,7 @@ public class DetailCampuranSemprot {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "penyemprotan_id", nullable = false)
+    @JsonIgnore
     private PerlakuanPenyemprotan penyemprotan;
 
     @ManyToOne(optional = false)

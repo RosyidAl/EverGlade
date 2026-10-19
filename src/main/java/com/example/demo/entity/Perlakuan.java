@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +16,7 @@ public abstract class Perlakuan {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "log_pemeriksaan_id", nullable = false)
+    @JsonIgnore
     private LogPemeriksaan logPemeriksaan;
 
     @Column(name = "catatan", columnDefinition = "TEXT")
