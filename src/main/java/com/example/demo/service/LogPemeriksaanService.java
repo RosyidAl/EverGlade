@@ -28,6 +28,9 @@ public class LogPemeriksaanService {
     @Autowired
     private InventarisBahanService inventarisBahanService;
 
+    @Autowired(required = false)
+    private WeatherService weatherService;
+
     /**
      * Mengambil seluruh log pemeriksaan tanaman.
      *
@@ -110,6 +113,14 @@ public class LogPemeriksaanService {
                 } else if (perlakuan instanceof PerlakuanPenyemprotan penyemprotan) {
                     prosesPenyemprotan(penyemprotan);
                 }
+            }
+        }
+
+        // 3. Otomasi Cuaca: Jika belum ditentukan, coba ambil otomatis dari Open-Meteo
+        if (log.getCuaca() == null && weatherService != null) {
+            Cuaca cuacaOtomatis = weatherService.fetchCurrentWeather(null, null);
+            if (cuacaOtomatis != null) {
+                log.setCuaca(cuacaOtomatis);
             }
         }
 
@@ -208,12 +219,14 @@ public class LogPemeriksaanService {
         // 2. Buat log pemeriksaan untuk masing-masing tanaman dengan nilai proporsional
         List<LogPemeriksaan> hasilLog = new ArrayList<>();
         LocalDateTime waktuSekarang = LocalDateTime.now();
+        Cuaca cuacaBatch = (weatherService != null) ? weatherService.fetchCurrentWeather(null, null) : null;
 
         for (Long tanamanId : daftarTanamanId) {
             Tanaman t = tanamanService.ambilBerdasarkanId(tanamanId);
 
             LogPemeriksaan log = new LogPemeriksaan();
             log.setTanaman(t);
+            log.setCuaca(cuacaBatch);
             log.setWaktuPemeriksaan(waktuSekarang);
             log.setCatatanUmum(catatan != null ? catatan : "Penyemprotan massal (" + jumlahTanaman + " tanaman)");
 

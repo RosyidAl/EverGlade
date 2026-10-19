@@ -32,6 +32,9 @@ class LogPemeriksaanServiceTest {
     @Mock
     private InventarisBahanService inventarisBahanService;
 
+    @Mock
+    private WeatherService weatherService;
+
     @InjectMocks
     private LogPemeriksaanService logService;
 
@@ -162,5 +165,29 @@ class LogPemeriksaanServiceTest {
         // Memastikan stok hanya dipotong SEKALI sejumlah total tangki (10.00)
         verify(inventarisBahanService, times(1)).kurangiStok(1L, new BigDecimal("10.00"));
         verify(repository, times(2)).save(any(LogPemeriksaan.class));
+    }
+
+    @Test
+    @DisplayName("Otomatis menarik cuaca saat log disimpan tanpa data cuaca")
+    void testSimpanLog_OtomatisTarikCuaca() {
+        when(tanamanService.ambilBerdasarkanId(10L)).thenReturn(tanaman);
+        when(repository.save(any(LogPemeriksaan.class))).thenAnswer(i -> i.getArgument(0));
+
+        Cuaca cuacaMock = new Cuaca();
+        cuacaMock.setId(99L);
+        cuacaMock.setKondisi("Cerah");
+        when(weatherService.fetchCurrentWeather(null, null)).thenReturn(cuacaMock);
+
+        LogPemeriksaan log = new LogPemeriksaan();
+        log.setTanaman(tanaman);
+        // cuaca tidak diset (null)
+
+        LogPemeriksaan result = logService.simpanLog(log);
+
+        assertNotNull(result);
+        assertNotNull(result.getCuaca());
+        assertEquals(99L, result.getCuaca().getId());
+        assertEquals("Cerah", result.getCuaca().getKondisi());
+        verify(weatherService).fetchCurrentWeather(null, null);
     }
 }
