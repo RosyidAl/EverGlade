@@ -13,6 +13,8 @@ CREATE TABLE tanaman (
     lokasi_tanam VARCHAR(100),
     tanggal_tanam DATE NOT NULL,
     status_aktif BOOLEAN NOT NULL DEFAULT TRUE,
+    tanggal_selesai DATE NULL,
+    keterangan_selesai VARCHAR(100) NULL,
     catatan TEXT
 ) ENGINE=InnoDB;
 
@@ -38,7 +40,8 @@ CREATE TABLE inventaris_bahan (
     satuan_stok ENUM('ML', 'GRAM') NOT NULL, -- Diseragamkan ke satuan dasar terkecil
     tanggal_kadaluarsa DATE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE, -- Soft-delete agar riwayat aman
-    catatan TEXT
+    catatan TEXT,
+    CONSTRAINT chk_stok_positif CHECK (stok_saat_ini >= 0)
 ) ENGINE=InnoDB;
 
 -- ==========================================
@@ -53,7 +56,7 @@ CREATE TABLE log_pemeriksaan (
     waktu_pemeriksaan DATETIME NOT NULL,
     catatan_umum TEXT,
     CONSTRAINT fk_log_tanaman FOREIGN KEY (tanaman_id) 
-        REFERENCES tanaman(id) ON DELETE CASCADE,
+        REFERENCES tanaman(id) ON DELETE RESTRICT,
     CONSTRAINT fk_log_cuaca FOREIGN KEY (cuaca_id) 
         REFERENCES cuaca(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -135,7 +138,8 @@ CREATE TABLE detail_bahan_pemupukan (
     CONSTRAINT fk_detail_pupuk FOREIGN KEY (pemupukan_id) 
         REFERENCES perlakuan_pemupukan(perlakuan_id) ON DELETE CASCADE,
     CONSTRAINT fk_pupuk_inventaris FOREIGN KEY (bahan_id) 
-        REFERENCES inventaris_bahan(id) ON DELETE RESTRICT
+        REFERENCES inventaris_bahan(id) ON DELETE RESTRICT,
+    CONSTRAINT uq_pemupukan_bahan UNIQUE (pemupukan_id, bahan_id)
 ) ENGINE=InnoDB;
 
 -- Subclass 3: Penyemprotan (Pestisida / Pupuk Daun - Tank Mix)
@@ -156,5 +160,6 @@ CREATE TABLE detail_campuran_semprot (
     CONSTRAINT fk_detail_semprot FOREIGN KEY (penyemprotan_id) 
         REFERENCES perlakuan_penyemprotan(perlakuan_id) ON DELETE CASCADE,
     CONSTRAINT fk_semprot_inventaris FOREIGN KEY (bahan_id) 
-        REFERENCES inventaris_bahan(id) ON DELETE RESTRICT
+        REFERENCES inventaris_bahan(id) ON DELETE RESTRICT,
+    CONSTRAINT uq_semprot_bahan UNIQUE (penyemprotan_id, bahan_id)
 ) ENGINE=InnoDB;

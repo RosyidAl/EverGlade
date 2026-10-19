@@ -30,10 +30,16 @@ public class Tanaman {
     @Column(name = "status_aktif", nullable = false)
     private Boolean statusAktif = true;
 
+    @Column(name = "tanggal_selesai")
+    private LocalDate tanggalSelesai;
+
+    @Column(name = "keterangan_selesai", length = 100)
+    private String keteranganSelesai;
+
     @Column(name = "catatan", columnDefinition = "TEXT")
     private String catatan;
 
-    @OneToMany(mappedBy = "tanaman", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "tanaman")
     @JsonIgnore
     private List<LogPemeriksaan> logPemeriksaanList = new ArrayList<>();
 
@@ -54,6 +60,12 @@ public class Tanaman {
 
     public Boolean getStatusAktif() { return statusAktif; }
     public void setStatusAktif(Boolean statusAktif) { this.statusAktif = statusAktif; }
+
+    public LocalDate getTanggalSelesai() { return tanggalSelesai; }
+    public void setTanggalSelesai(LocalDate tanggalSelesai) { this.tanggalSelesai = tanggalSelesai; }
+
+    public String getKeteranganSelesai() { return keteranganSelesai; }
+    public void setKeteranganSelesai(String keteranganSelesai) { this.keteranganSelesai = keteranganSelesai; }
 
     public String getCatatan() { return catatan; }
     public void setCatatan(String catatan) { this.catatan = catatan; }
