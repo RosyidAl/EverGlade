@@ -1,0 +1,53 @@
+name: Continuous Deployment to VPS
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to fatisda-l0125065
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Verify Environment Configuration
+        run: |
+          if [ ! -f .env ]; then
+            echo "[INFO] .env not found, initializing from .env.example..."
+            cp .env.example .env
+          fi
+
+      - name: Deploy Docker Compose Stack
+        run: |
+          echo "[INFO] Building and deploying containers..."
+          docker compose up -d --build --remove-orphans
+
+      - name: Verify Container Health
+        run: |
+          echo "[INFO] Waiting for service to report healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8085/ >/dev/null; then
+              echo "[SUCCESS] EverGlade is responding at http://127.0.0.1:8085/"
+              docker compose ps
+              exit 0
+            fi
+            echo "Waiting for app to start... (\$i/30)"
+            sleep 2
+          done
+          echo "[ERROR] EverGlade failed to start within 60 seconds."
+          docker compose logs --tail 50 app
+          exit 1
+
+      - name: Clean Up Unused Docker Images
+        if: always()
+        run: |
+          docker image prune -f

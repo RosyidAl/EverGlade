@@ -1,0 +1,3 @@
+# 1. Self-Hosted GitHub Actions Runner and Docker Deployment
+
+Deploying EverGlade to the `fatisda-l0125065` VPS required bridging GitHub Actions with a private Tailscale network (`100.112.123.101`) without exposing the server's SSH port to the public internet or relying on short-lived Tailscale auth keys. We decided to install a dedicated GitHub Actions Self-Hosted Runner on the VPS and package the application using Docker Compose (Spring Boot + MySQL) proxied through Nginx on port 80, with EverGlade bound internally to `127.0.0.1:8085` to avoid colliding with `code-server` on port 8080. This allows outbound-only deployment triggers, zero secret exposure in GitHub workflows, and full containerized isolation with automated health checks.

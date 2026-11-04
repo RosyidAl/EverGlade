@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: everglade-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-everglade_db_secret}
+      MYSQL_DATABASE: ${DB_NAME:-db_manajemen_tanaman}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-everglade_db_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - everglade-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: everglade-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${APP_PORT:-8085}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${DB_NAME:-db_manajemen_tanaman}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jakarta
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-root}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-everglade_db_secret}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    networks:
+      - everglade-network
+
+networks:
+  everglade-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
