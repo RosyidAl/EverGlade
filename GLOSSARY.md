@@ -31,3 +31,7 @@ _Avoid_: Page switch, Multi-window, Screen tab
 **Alokasi Polybag Otomatis**:
 Mekanisme pengikatan cerdas yang secara otomatis mencarikan dan menetapkan slot nomor polybag kosong (PB-01 s/d PB-40) saat pengguna menambahkan tanaman cabai baru tanpa mewajibkan input manual.
 _Avoid_: Auto slot, ID picker, Manual polybag entry
+
+**Konsol Analitik Kebun**:
+Tampilan kerja layar penuh (*Tab 3*) yang didedikasikan untuk eksplorasi grafik runtun waktu (laju tinggi tanaman, korelasi iklim mikro, dan distribusi varietas) serta log perlakuan seluruh kebun secara menyeluruh.
+_Avoid_: Analytics popup, Chart modal, Metric dialog

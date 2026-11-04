@@ -513,17 +513,18 @@
     </style>
 </head>
 <body class="relative overflow-hidden">
-    <!-- Segmented Tab Navigation: Kebun 3D vs Manajemen Tanaman -->
+    <!-- Segmented Tab Navigation: Kebun 3D vs Manajemen Tanaman vs Analitik Kebun -->
     <nav class="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center p-1 rounded-full bg-white/95 border border-slate-200/90 shadow-lg backdrop-blur-md" aria-label="Navigasi Utama">
-        <button id="tab-btn-3d" onclick="switchMainTab('3d')" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-[#1e7247] text-white shadow-xs cursor-pointer">
+        <button id="tab-btn-3d" onclick="switchMainTab('3d')" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-[#1e7247] text-white shadow-xs cursor-pointer" title="Kanvas 3D Kebun (Tekan 1)">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
             <span>Kebun 3D</span>
+            <kbd class="text-[9px] px-1 py-0.2 rounded bg-white/20 text-white font-mono hidden sm:inline">1</kbd>
         </button>
-        <button id="tab-btn-mgmt" onclick="switchMainTab('mgmt')" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer">
+        <button id="tab-btn-mgmt" onclick="switchMainTab('mgmt')" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer" title="Daftar & CRUD Tanaman (Tekan 2)">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
                 <rect x="9" y="3" width="6" height="4" rx="1"></rect>
@@ -531,6 +532,16 @@
             </svg>
             <span>Manajemen Tanaman</span>
             <span id="tab-mgmt-count" class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-[#176943] font-bold">0</span>
+            <kbd class="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-500 font-mono hidden sm:inline">2</kbd>
+        </button>
+        <button id="tab-btn-analytics" onclick="switchMainTab('analytics')" class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer" title="Grafik Analitik Layar Penuh (Tekan 3)">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 20V10"></path>
+                <path d="M12 20V4"></path>
+                <path d="M6 20v-6"></path>
+            </svg>
+            <span>Analitik Kebun</span>
+            <kbd class="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-500 font-mono hidden sm:inline">3</kbd>
         </button>
     </nav>
 
@@ -920,100 +931,151 @@
         </div>
     </div>
 
-    <!-- Analytics Modal (Glass Dashboard) -->
-    <div id="analytics-modal" onclick="if(event.target === this) closeAnalyticsModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 modal-fade opacity-0 pointer-events-none" style="background: var(--overlay-scrim)">
-        <div id="analytics-modal-card" class="glass-panel w-full max-w-4xl max-h-[88vh] rounded-2xl p-5 sm:p-6 flex flex-col overflow-hidden transform scale-95 modal-fade pointer-events-none t-ink">
-            <!-- Header Row -->
-            <div class="flex items-center justify-between border-b border-[color:var(--tile-edge)] pb-3 mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-[color:var(--accent-tint)] border border-[color:var(--accent-tint-border)] flex items-center justify-center t-accent shrink-0">
-                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        <!-- Tab 3: Dashboard Analitik Kebun (Full-Page Clean Modern-Minimal) -->
+    <section id="analytics-view" class="hidden fixed inset-0 z-30 bg-[#f7f9f7] overflow-y-auto text-[#1f2a24] pt-20 pb-16 px-4 sm:px-8 selection:bg-emerald-100">
+        <div class="max-w-6xl mx-auto space-y-6">
+            <!-- Header Kerja Analitik -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-[#176943] mb-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                        Wawasan & Telemetri Runtun Waktu
                     </div>
-                    <div>
-                        <h2 class="text-base font-bold t-ink tracking-tight">Dashboard Manajemen Kebun</h2>
-                        <p class="text-xs t-muted">Ringkasan kondisi tanaman, riwayat perawatan, dan stok bahan</p>
-                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#14231a]">Analitik & Riwayat Kebun Cabai</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Eksplorasi grafik pertumbuhan tinggi, korelasi iklim mikro, dan riwayat perlakuan agronomis.</p>
                 </div>
+                <div class="flex items-center gap-2.5">
+                    <!-- Filter Rentang Waktu -->
+                    <div class="inline-flex rounded-xl bg-white p-1 border border-slate-200 shadow-xs">
+                        <button onclick="setAnalyticsTimeRange('7d')" id="range-btn-7d" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all cursor-pointer">7 Hari</button>
+                        <button onclick="setAnalyticsTimeRange('30d')" id="range-btn-30d" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1e7247] text-white shadow-xs transition-all cursor-pointer">30 Hari</button>
+                        <button onclick="setAnalyticsTimeRange('hst')" id="range-btn-hst" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition-all cursor-pointer">Musim (HST)</button>
+                    </div>
 
-                <div class="flex items-center gap-2">
-                    <button onclick="refreshAnalyticsData()" class="gbtn h-9 px-3 rounded-xl tile t-ink text-xs font-semibold flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    <button onclick="refreshAnalyticsData()" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer" title="Perbarui data analitik">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                         <span>Segarkan</span>
-                    </button>
-                    <button onclick="closeAnalyticsModal()" class="gbtn w-9 h-9 rounded-xl tile flex items-center justify-center" title="Tutup">
-                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Content Area (Clean 3-Section Layout) -->
-            <div class="flex-1 overflow-y-auto pr-1 space-y-4">
-                <!-- 1. Key Metrics Strip (Clean & Focused) -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="tile p-3.5 rounded-xl">
-                        <span class="text-xs font-medium t-muted block">Total Tanaman Aktif</span>
-                        <div class="text-2xl font-bold t-ink tracking-tight mt-1" id="dash-total-tanaman">1 Tanaman</div>
-                        <span class="text-[11px] t-muted">Terdaftar di sistem</span>
+            <!-- 1. Key Metrics Strip (Clean Matte Cards) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+                    <span class="text-xs font-medium text-slate-500 block">Total Tanaman Aktif</span>
+                    <div class="text-2xl sm:text-3xl font-bold text-[#14231a] tracking-tight mt-1" id="dash-total-tanaman">0 Tanaman</div>
+                    <span class="text-[11px] text-slate-400 mt-1 block">Tercatat di sistem</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+                    <span class="text-xs font-medium text-slate-500 block">Rata-rata Tinggi Tanaman</span>
+                    <div class="text-2xl sm:text-3xl font-bold text-[#1e7247] tracking-tight mt-1" id="kpi-avg-height">48.0 cm</div>
+                    <span class="text-[11px] text-slate-400 mt-1 block">Pengukuran terbaru</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+                    <span class="text-xs font-medium text-slate-500 block">Fase Pertumbuhan</span>
+                    <div class="text-2xl sm:text-3xl font-bold text-[#14231a] tracking-tight mt-1" id="kpi-phase-pct">Generatif</div>
+                    <span class="text-[11px] text-emerald-700 font-semibold mt-1 block">Pembungaan & Buah</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+                    <span class="text-xs font-medium text-slate-500 block">Status Kesehatan Kebun</span>
+                    <div class="text-2xl sm:text-3xl font-bold text-emerald-700 tracking-tight mt-1" id="kpi-health-pct">Optimal (98%)</div>
+                    <span class="text-[11px] text-slate-500 mt-1 block" id="kpi-health-sub">Bebas penyakit</span>
+                </div>
+            </div>
+
+            <!-- 2. Main Trend & Telemetry Grid (Charts) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Left: Kurva Pertumbuhan Tinggi (Lega & Lebar) -->
+                <div class="bg-white lg:col-span-2 p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-sm font-bold text-[#14231a]">Kurva Laju Pertumbuhan Tanaman</h2>
+                            <p class="text-xs text-slate-500">Tinggi tanaman (cm) vs Hari Pasca Tanam (HST)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-xs font-medium text-slate-600">Rata-rata Seluruh Kebun</span>
+                        </div>
                     </div>
-                    <div class="tile p-3.5 rounded-xl">
-                        <span class="text-xs font-medium t-muted block">Tinggi Terakhir</span>
-                        <div class="text-2xl font-bold t-accent tracking-tight mt-1" id="kpi-avg-height">45.5 cm</div>
-                        <span class="text-[11px] t-muted">Pemeriksaan terbaru</span>
-                    </div>
-                    <div class="tile p-3.5 rounded-xl">
-                        <span class="text-xs font-medium t-muted block">Fase Tumbuh</span>
-                        <div class="text-2xl font-bold t-ink tracking-tight mt-1" id="kpi-phase-pct">Vegetatif</div>
-                        <span class="text-[11px] t-accent font-medium">Tunas baru aktif</span>
-                    </div>
-                    <div class="tile p-3.5 rounded-xl">
-                        <span class="text-xs font-medium t-muted block">Status Kesehatan</span>
-                        <div class="text-2xl font-bold tracking-tight mt-1" id="kpi-health-pct" style="color: var(--signal-sun)">Perhatian</div>
-                        <span class="text-[11px] t-muted" id="kpi-health-sub">Kutu daun ringan</span>
+                    <div class="relative w-full h-64 sm:h-72">
+                        <canvas id="growthTimeSeriesChart" role="img" aria-label="Grafik garis tinggi tanaman"></canvas>
                     </div>
                 </div>
 
-                <!-- 2. Main Trend & Info Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <!-- Left: Kurva Pertumbuhan -->
-                    <div class="tile md:col-span-2 p-4 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-2 gap-2">
-                            <div>
-                                <h3 class="text-xs font-bold t-ink">Grafik Pertumbuhan Tanaman</h3>
-                                <p class="text-[11px] t-muted">Tinggi tanaman (cm) dari riwayat pemeriksaan</p>
+                <!-- Right: Distribusi Varietas & Kondisi Cuaca -->
+                <div class="space-y-4">
+                    <!-- Cuaca & Mikroklimat Realtime -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-sm font-bold text-[#14231a]">Kondisi Mikroklimat Kebun</h2>
+                            <span id="weather-sync-badge" class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-100">Live API</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center py-2">
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="text-[11px] text-slate-500 block">Suhu</span>
+                                <span id="analytics-weather-temp" class="text-base font-bold text-[#14231a] mt-0.5 block">--°C</span>
                             </div>
-                            <div class="inline-flex rounded-lg tile p-0.5">
-                                <button onclick="setAnalyticsTimeRange('7d')" id="range-btn-7d" class="gbtn px-2.5 py-1 rounded-md text-xs font-medium">7 Hari</button>
-                                <button onclick="setAnalyticsTimeRange('30d')" id="range-btn-30d" class="gbtn active px-2.5 py-1 rounded-md text-xs font-semibold">30 Hari</button>
-                                <button onclick="setAnalyticsTimeRange('hst')" id="range-btn-hst" class="gbtn px-2.5 py-1 rounded-md text-xs font-medium">Semua</button>
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="text-[11px] text-slate-500 block">Lembab</span>
+                                <span id="analytics-weather-humidity" class="text-base font-bold text-teal-800 mt-0.5 block">--%</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="text-[11px] text-slate-500 block">Kondisi</span>
+                                <span id="analytics-weather-cond" class="text-[11px] font-bold text-amber-800 mt-0.5 block truncate">--</span>
                             </div>
                         </div>
-                        <div class="relative w-full h-48">
-                            <canvas id="growthTimeSeriesChart" role="img" aria-label="Grafik garis tinggi tanaman dari riwayat pemeriksaan"></canvas>
-                        </div>
+                        <p id="analytics-weather-insight" class="text-xs text-slate-500 mt-2.5 p-2 rounded-lg bg-emerald-50/50 border border-emerald-100/60 leading-relaxed">
+                            Kondisi mikroklimat ideal untuk perkembangan buah cabai rawit.
+                        </p>
                     </div>
 
-                    <!-- Right: Informasi Lingkungan / Cuaca -->
-                    <div class="tile p-4 rounded-xl flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xs font-bold t-ink">Kondisi Cuaca & Iklim</h3>
-                                <span id="weather-sync-badge" class="text-[11px] px-2 py-0.5 rounded-md bg-[color:var(--accent-tint)] t-accent font-semibold border border-[color:var(--accent-tint-border)]">Live</span>
-                            </div>
-                            <div class="space-y-2 mt-3">
-                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
-                                    <span class="t-muted">Suhu Udara</span>
-                                    <span id="analytics-weather-temp" class="font-bold t-ink">29°C</span>
-                                </div>
-                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
-                                    <span class="t-muted">Kelembapan</span>
-                                    <span id="analytics-weather-humidity" class="font-bold t-ink">75%</span>
-                                </div>
-                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
-                                    <span class="t-muted">Kondisi</span>
-                                    <span id="analytics-weather-cond" class="font-bold t-ink">Cerah Berawan</span>
-                                </div>
-                            </div>
+                    <!-- Distribusi Varietas -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                        <h2 class="text-sm font-bold text-[#14231a] mb-2">Distribusi Varietas</h2>
+                        <div class="relative w-full h-40">
+                            <canvas id="varietyDistributionChart" role="img" aria-label="Grafik komposisi varietas"></canvas>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Riwayat Pemeriksaan & Tindakan Agronomis -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-sm font-bold text-[#14231a]">Log Riwayat Tindakan & Perawatan</h2>
+                        <p class="text-xs text-slate-500">Catatan penyemprotan, pemupukan organik, dan pemeriksaan kesehatan.</p>
+                    </div>
+                    <button onclick="openCheckinModalFromAnalytics()" class="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#176943] border border-emerald-200 text-xs font-bold transition-all cursor-pointer">
+                        + Catat Pemeriksaan Baru
+                    </button>
+                </div>
+                <div id="analytics-log-list" class="space-y-2 max-h-64 overflow-y-auto text-xs pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Backward compatibility anchors for JS -->
+            <div class="hidden">
+                <div id="analytics-modal"></div>
+                <div id="analytics-modal-card"></div>
+                <canvas id="weatherTrendChart" aria-hidden="true"></canvas>
+                <span id="kpi-health-ratio"></span>
+                <span id="kpi-phase-ratio"></span>
+                <span id="kpi-phase-sub"></span>
+                <span id="kpi-harvest"></span>
+                <span id="kpi-spray-count"></span>
+                <span id="bar-health-good"></span>
+                <span id="bar-health-sick"></span>
+                <div id="bar-health-fill-good"></div>
+                <div id="bar-health-fill-sick"></div>
+                <span id="bar-phase-gen"></span>
+                <span id="bar-phase-veg"></span>
+                <div id="bar-phase-fill-gen"></div>
+            </div>
+        </div>
+    </section>
+
                         <div class="p-2.5 rounded-lg text-[11px] tile mt-3">
                             <span class="font-semibold t-ink">Catatan:</span>
                             <span id="analytics-weather-insight" class="block mt-0.5 t-muted">Kondisi iklim mendukung pertumbuhan optimal.</span>
@@ -3243,44 +3305,11 @@
         }
 
         function openAnalyticsModal() {
-            const modal = document.getElementById('analytics-modal');
-            const card = document.getElementById('analytics-modal-card');
-            if (!modal || !card) return;
-
-            playPop();
-            currentAnalyticsPlantId = 'all';
-
-            modal.classList.remove('hidden');
-            void modal.offsetWidth; // Trigger reflow for smooth animation
-
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.classList.add('opacity-100', 'pointer-events-auto');
-            card.classList.remove('scale-95', 'pointer-events-none');
-            card.classList.add('scale-100', 'pointer-events-auto');
-
-            setTimeout(() => {
-                initOrUpdateAnalyticsCharts();
-                initOrUpdateWeatherTrendChart();
-                renderAnalyticsLogList();
-            }, 60);
+            switchMainTab('analytics');
         }
 
         function closeAnalyticsModal() {
-            const modal = document.getElementById('analytics-modal');
-            const card = document.getElementById('analytics-modal-card');
-            if (!modal || !card) return;
-
-            playPop();
-            card.classList.remove('scale-100', 'pointer-events-auto');
-            card.classList.add('scale-95', 'pointer-events-none');
-            modal.classList.remove('opacity-100', 'pointer-events-auto');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-
-            setTimeout(() => {
-                if (modal.classList.contains('opacity-0')) {
-                    modal.classList.add('hidden');
-                }
-            }, 300);
+            switchMainTab('3d');
         }
 
         function openAnalyticsForCurrentPlant() {
@@ -4548,45 +4577,70 @@
             currentMainTab = tab;
             const btn3d = document.getElementById('tab-btn-3d');
             const btnMgmt = document.getElementById('tab-btn-mgmt');
+            const btnAnalytics = document.getElementById('tab-btn-analytics');
             const mgmtView = document.getElementById('mgmt-view');
+            const analyticsView = document.getElementById('analytics-view');
             const climateCard = document.querySelector('.climate-card');
             const appDock = document.querySelector('.app-dock');
             const sidebarOpenBtn = document.getElementById('btn-open-sidebar');
 
             playPop();
 
+            const activeClass = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-[#1e7247] text-white shadow-xs cursor-pointer';
+            const inactiveClass = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer';
+
             if (tab === '3d') {
-                if (btn3d) {
-                    btn3d.className = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-[#1e7247] text-white shadow-xs cursor-pointer';
-                }
-                if (btnMgmt) {
-                    btnMgmt.className = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer';
-                }
+                if (btn3d) btn3d.className = activeClass;
+                if (btnMgmt) btnMgmt.className = inactiveClass;
+                if (btnAnalytics) btnAnalytics.className = inactiveClass;
+
                 if (mgmtView) mgmtView.classList.add('hidden');
+                if (analyticsView) analyticsView.classList.add('hidden');
                 if (climateCard) climateCard.classList.remove('hidden');
                 if (appDock) appDock.classList.remove('hidden');
                 if (sidebarOpenBtn && isSidebarCollapsed) sidebarOpenBtn.classList.remove('hidden');
-            } else {
-                if (btn3d) {
-                    btn3d.className = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all cursor-pointer';
-                }
-                if (btnMgmt) {
-                    btnMgmt.className = 'flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all bg-[#1e7247] text-white shadow-xs cursor-pointer';
-                }
+            } else if (tab === 'mgmt') {
+                if (btn3d) btn3d.className = inactiveClass;
+                if (btnMgmt) btnMgmt.className = activeClass;
+                if (btnAnalytics) btnAnalytics.className = inactiveClass;
+
                 if (mgmtView) mgmtView.classList.remove('hidden');
+                if (analyticsView) analyticsView.classList.add('hidden');
                 if (climateCard) climateCard.classList.add('hidden');
                 if (appDock) appDock.classList.add('hidden');
                 if (sidebarOpenBtn) sidebarOpenBtn.classList.add('hidden');
 
                 renderManagementView();
+            } else if (tab === 'analytics') {
+                if (btn3d) btn3d.className = inactiveClass;
+                if (btnMgmt) btnMgmt.className = inactiveClass;
+                if (btnAnalytics) btnAnalytics.className = activeClass;
+
+                if (mgmtView) mgmtView.classList.add('hidden');
+                if (analyticsView) analyticsView.classList.remove('hidden');
+                if (climateCard) climateCard.classList.add('hidden');
+                if (appDock) appDock.classList.add('hidden');
+                if (sidebarOpenBtn) sidebarOpenBtn.classList.add('hidden');
+
+                currentAnalyticsPlantId = 'all';
+                refreshAnalyticsData();
+                setTimeout(() => {
+                    initOrUpdateAnalyticsCharts();
+                    initOrUpdateWeatherTrendChart();
+                    renderAnalyticsLogList();
+                    if (growthChart) growthChart.resize();
+                    if (varietyChart) varietyChart.resize();
+                    if (weatherTrendChart) weatherTrendChart.resize();
+                }, 100);
             }
         }
 
-        // Shortcut keyboard 1 & 2 untuk navigasi tab
+        // Shortcut keyboard 1, 2, 3 untuk navigasi tab
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === '1') switchMainTab('3d');
             else if (e.key === '2') switchMainTab('mgmt');
+            else if (e.key === '3') switchMainTab('analytics');
         });
 
         async function renderManagementView() {
