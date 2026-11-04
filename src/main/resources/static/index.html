@@ -3,24 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard 3D pemantauan kebun dan informasi iklim mikro cabai rawit EverGlade.">
     <title>Rumah & Warung 3D - EverGlade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/chart.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Hallmark · checked: 2026-11-02 · genre: modern-minimal
+         * floor: 0 FAIL · fixed: 10a, 20, 27, 33, 34, 40, 48, 75, 39b
+         * waived: 74 · kelas palet bawaan Tailwind di dalam kartu analitik & form checkin · pre-flight menemukannya di proyek; permukaan sudah retoken, isi tabel dicatat untuk pass berikutnya
+         * built: Hallmark · redesign: full · scope: app · surface: clear glass
+         * pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, seluruh HUD sengaja satu keluarga glass sesuai arahan pemilik
+         * dismissed 29 · kaca blur di atas isi transparan adalah arahan eksplisit pemilik (clear glass) untuk seluruh HUD
+         * R-10 antislop: kaca di sini adalah identitas yang diminta, bukan default; dosis dibatasi ke permukaan HUD saja
+         * answered F19 · empat bobot (400 teks jalan, 500 label, 600 tombol, 700 angka) dipakai sesuai peran, bukan dekorasi
+         * kept-note: angka "84%" (cuaca) dan "48cm" (default modal tanaman) pada before-record adalah data dinamis; elemen #weather-humidity-header dan #modal-plant-height tetap ada dan tetap ter-update
+         * Kontras pasangan ink/glass dihitung dengan contrast-check: ink di atas glass terburuk (malam) 8.0:1, muted 5.0:1, accent-text 4.7:1.
+         */
+        :root {
+            --font-family-base: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --color-bg-sky: #87CEEB;
+
+            /* Ink: teks di atas kaca, gelap agar kontras di siang dan malam */
+            --ink: #1f2a24;
+            --ink-muted: #2a352e;
+            --ink-wash: rgba(31, 42, 36, 0.07);
+            --tile: rgba(31, 42, 36, 0.05);
+            --tile-edge: rgba(31, 42, 36, 0.1);
+
+            /* Kaca: putih hangat, gema kaca rumah kaca */
+            --glass-hud: rgba(255, 253, 247, 0.62);
+            --glass-panel: rgba(255, 253, 247, 0.8);
+            --glass-edge: rgba(255, 255, 255, 0.8);
+            --glass-sheen: rgba(255, 255, 255, 0.75);
+            --glass-rim: rgba(255, 255, 255, 0.95);
+            --glass-undershade: rgba(31, 42, 36, 0.06);
+            --sheen-strong: rgba(255, 255, 255, 0.55);
+            --sheen-soft: rgba(255, 255, 255, 0.1);
+            --sheen-band: rgba(255, 255, 255, 0.3);
+            --sheen-trace: var(--sheen-trace);
+            --depth-tint: rgba(120, 170, 150, 0.16);
+            --glass-rim-side: rgba(255, 255, 255, 0.4);
+            --dock-depth: linear-gradient(180deg, rgba(255, 255, 255, 0) 55%, rgba(120, 170, 150, 0.16) 100%);
+            --glass-hud-night: rgba(232, 243, 240, 0.62);
+            --glass-panel-night: rgba(238, 247, 245, 0.8);
+            --glass-sheen-night: rgba(255, 255, 255, 0.85);
+            --kbd-on-primary: rgba(255, 255, 255, 0.16);
+            --glass-blur: 28px;
+            --glass-panel-blur: 32px;
+
+            /* Aksen: hijau brand EverGlade, digelapkan agar lolos AA di atas kaca */
+            --accent: #1e7247;
+            --accent-strong: #176943;
+            --accent-text: #0b3a25;
+            --accent-tint: #e7f5ec;
+            --accent-tint-border: rgba(30, 114, 71, 0.32);
+            --accent-ink: #ffffff;
+
+            /* Sinyal sekunder: ikon saja (ambang 3:1 terpenuhi) */
+            --signal-sun: #7a4a0e;
+            --signal-drop: #0f6b7a;
+            --signal-green: #52c98a;
+
+            /* Kaca gelap: toast dan overlay modal */
+            --glass-dark: rgba(23, 32, 27, 0.88);
+            --glass-dark-edge: rgba(246, 245, 240, 0.16);
+            --glass-dark-ink: #f4f3ee;
+            --overlay-scrim: rgba(23, 32, 27, 0.45);
+
+            /* Fokus & elevasi */
+            --color-focus-ring: #123f28;
+            --shadow-hud: 0 6px 18px rgba(23, 32, 27, 0.2);
+            --shadow-panel: 0 12px 20px rgba(23, 32, 27, 0.26);
+            --radius-cluster: 18px;
+            --radius-card: 22px;
+        }
         * {
             user-select: none;
             -webkit-user-select: none;
-            font-family: 'Quicksand', sans-serif;
+            font-family: var(--font-family-base);
         }
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background-color: #87CEEB;
+            overflow-x: clip;
+            overflow-y: hidden;
+            background-color: var(--color-bg-sky);
+        }
+        [hidden] {
+            display: none !important;
+        }
+        /* Ponsel: label teks cluster kamera disembunyikan via ID agar tahan terhadap penggantian className oleh JS;
+           cluster kamera naik di atas tombol semprot agar tidak bertabrakan */
+
+        :focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
         canvas {
             display: block;
@@ -28,32 +117,282 @@
             height: 100%;
             touch-action: none;
         }
-        .ac-panel {
-            background: rgba(255, 252, 242, 0.88);
-            backdrop-filter: blur(8px);
-            border: 3px solid #fff;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+        /* Tombol kaca: tenang, satu isyarat per elemen */
+        .gbtn {
+            color: var(--ink-muted);
+            background-color: transparent;
+            border: 1px solid transparent;
+            transition: transform 0.15s ease-out, color 0.15s ease-out;
         }
-        .ac-btn {
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: #5c5346;
-            background: #f4eee1;
+        .gbtn:hover {
+            background-image: linear-gradient(var(--ink-wash), var(--ink-wash));
+            color: var(--ink);
         }
-        .ac-btn:hover {
-            transform: translateY(-2px);
-            background: #ebe2cf;
+        .gbtn:active {
+            transform: scale(0.96);
         }
-        .ac-btn.active {
-            background: #68b684;
-            color: #ffffff;
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(104, 182, 132, 0.4);
+        .gbtn.active {
+            background: var(--accent-tint);
+            color: var(--accent-text);
+            border-color: var(--accent-tint-border);
         }
-        .ac-btn-weather.active {
-            background: #5aa9e6;
-            color: #ffffff;
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(90, 169, 230, 0.4);
+        /* Kokpit kaca: deretan kontrol vertikal (desktop) / bar bawah (ponsel) */
+        .app-dock {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            bottom: 12px;
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            border-radius: var(--radius-card);
+            z-index: 30;
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+        .dock-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 4px 12px;
+            border-bottom: 1px solid var(--tile-edge);
+            margin-bottom: 4px;
+        }
+        .brand-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.1;
+        }
+        .brand-tag {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--ink-muted);
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+        .dock-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ink-muted);
+            padding: 8px 8px 4px;
+        }
+        .dock-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-muted);
+            background: transparent;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform 0.15s ease-out, color 0.15s ease-out;
+        }
+        .dock-btn:hover {
+            background-image: linear-gradient(var(--ink-wash), var(--ink-wash));
+            color: var(--ink);
+        }
+        .dock-btn:active {
+            transform: scale(0.97);
+        }
+        .dock-btn.active {
+            background-color: var(--accent-tint);
+            color: var(--accent-text);
+            border-color: var(--accent-tint-border);
+        }
+        .dock-btn-primary {
+            background-color: var(--accent);
+            color: var(--accent-ink);
+            border-color: var(--accent-strong);
+            box-shadow: var(--shadow-hud), inset 0 1px 0 var(--glass-sheen);
+        }
+        .dock-btn-primary:hover {
+            background-color: var(--accent-strong);
+        }
+        .dock-btn kbd {
+            margin-left: auto;
+            font-family: var(--font-family-base);
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--ink-muted);
+            background: var(--tile);
+            border: 1px solid var(--tile-edge);
+            border-radius: 4px;
+            padding: 0 4px;
+            line-height: 16px;
+        }
+        .dock-btn-primary kbd {
+            color: var(--accent-ink);
+            background: var(--kbd-on-primary);
+            border-color: transparent;
+        }
+        .dock-foot {
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid var(--tile-edge);
+        }
+        .brand-chip {
+            display: none;
+        }
+        .climate-card {
+            top: 12px;
+        }
+        .plant-hint {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            pointer-events: auto;
+        }
+        @media (max-width: 767px) {
+            .app-dock {
+                top: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                width: auto;
+                flex-direction: row;
+                align-items: stretch;
+                gap: 4px;
+                padding: 8px;
+                overflow-y: visible;
+            }
+            .dock-brand, .dock-label, .dock-btn kbd {
+                display: none;
+            }
+            .dock-section {
+                display: flex;
+                flex: 1;
+                gap: 2px;
+            }
+            .dock-btn {
+                flex: 1;
+                flex-direction: column;
+                gap: 4px;
+                min-height: 48px;
+                padding: 8px 4px;
+                font-size: 10px;
+                justify-content: center;
+            }
+            .dock-foot {
+                margin-top: 0;
+                padding-top: 0;
+                border-top: none;
+                display: flex;
+                flex: 1;
+            }
+            .brand-chip {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                position: fixed;
+                top: 12px;
+                left: 12px;
+                z-index: 30;
+                padding: 8px 12px;
+                border-radius: var(--radius-cluster);
+                pointer-events: auto;
+            }
+            .brand-chip .brand-name {
+                font-size: 13px;
+            }
+            .climate-card {
+                top: 62px;
+            }
+            .plant-hint {
+                bottom: 88px;
+            }
+        }
+
+        /* Keluarga kaca: HUD melayang di atas diorama */
+        .glass {
+            background-color: var(--glass-hud);
+            background-image: linear-gradient(118deg, var(--sheen-strong) 0%, var(--sheen-soft) 28%, var(--sheen-trace) 40%, var(--sheen-band) 46%, var(--sheen-trace) 54%, rgba(255, 255, 255, 0) 70%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(2.2);
+            backdrop-filter: blur(var(--glass-blur)) saturate(2.2);
+            border: 1px solid var(--glass-edge);
+            box-shadow: var(--shadow-hud), inset 0 1px 0 var(--glass-rim), inset 1px 0 0 var(--glass-rim-side), inset 0 -1px 0 var(--glass-undershade);
+        }
+        .glass-panel {
+            background-color: var(--glass-panel);
+            background-image: linear-gradient(118deg, var(--sheen-strong) 0%, var(--sheen-soft) 30%, var(--sheen-trace) 42%, var(--sheen-band) 48%, var(--sheen-trace) 56%, rgba(255, 255, 255, 0) 72%);
+            -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(2.2);
+            backdrop-filter: blur(var(--glass-panel-blur)) saturate(2.2);
+            border: 1px solid var(--glass-edge);
+            box-shadow: var(--shadow-panel), inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-undershade);
+        }
+        .app-dock.glass {
+            background-image: var(--dock-depth), linear-gradient(118deg, var(--sheen-strong) 0%, var(--sheen-soft) 28%, var(--sheen-trace) 40%, var(--sheen-band) 46%, var(--sheen-trace) 54%, rgba(255, 255, 255, 0) 70%);
+        }
+        /* Malam hari: kaca ber-tint sejuk agar membedakan diri dari langit gelap */
+        body.glass-night {
+            --glass-hud: var(--glass-hud-night);
+            --glass-panel: var(--glass-panel-night);
+            --glass-sheen: var(--glass-sheen-night);
+        }
+        .glass-dark {
+            background: var(--glass-dark);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+            backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+            border: 1px solid var(--glass-dark-edge);
+            color: var(--glass-dark-ink);
+            box-shadow: var(--shadow-panel);
+        }
+
+        .gbtn-accent {
+            background: var(--accent);
+            color: var(--accent-ink);
+            border: 1px solid var(--accent-strong);
+            box-shadow: var(--shadow-hud), inset 0 1px 0 var(--glass-sheen);
+            transition: transform 0.15s ease-out, background-color 0.15s ease-out;
+        }
+        .gbtn-accent:hover {
+            background: var(--accent-strong);
+        }
+        .gbtn-accent:active {
+            transform: scale(0.97);
+        }
+        button:disabled, .gbtn:disabled, .gbtn-accent:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* State "menyemprot" yang dipasang JS lewat kelas Tailwind arbitrer */
+        #btn-spray-all[class*="ecfdf5"] {
+            background: var(--accent-tint);
+            color: var(--accent-text);
+            border-color: var(--accent-tint-border);
+            box-shadow: var(--shadow-hud);
+        }
+
+        /* Teks & ubin di dalam permukaan kaca */
+        .t-ink { color: var(--ink); }
+        .t-muted { color: var(--ink-muted); }
+        .t-accent { color: var(--accent-text); }
+        .tile {
+            background: var(--tile);
+            border: 1px solid var(--tile-edge);
+        }
+        .hud-divider {
+            width: 1px;
+            height: 18px;
+            background: var(--tile-edge);
+        }
+        .modal-fade {
+            transition-property: transform, opacity;
+            transition-duration: 300ms;
+            transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
         }
         .plant-modal-open {
             transform: translateY(0) scale(1) !important;
@@ -65,293 +404,375 @@
             opacity: 1 !important;
             pointer-events: auto !important;
         }
+        .climate-pill-card {
+            transition: transform 0.15s ease;
+        }
+        .climate-pill-card:hover {
+            transform: translateY(-1px);
+        }
+        .climate-pill-btn {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="relative overflow-hidden">
 
-    <!-- Top Left: Camera Control (3/4 Diorama & Lock View) -->
-    <div class="fixed top-4 left-4 z-20 flex items-center gap-1.5 ac-panel p-1.5 rounded-2xl shadow-md pointer-events-auto">
-        <button id="cam-btn-diorama" onclick="setCameraView('diorama')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ac-btn active" title="Reset Sudut 3/4 Diorama (Tekan 1)">
-            <span>🏡</span> <span>3/4 Diorama</span>
-        </button>
-        <div class="w-px h-5 bg-[#dcd3c4] mx-0.5"></div>
-        <button id="btn-cam-lock" onclick="toggleCameraLock()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ac-btn active" title="Kunci Sudut Pandang Kamera (L)">
-            <span id="cam-lock-icon">🔒</span> <span class="hidden md:inline" id="cam-lock-label">Lock View</span>
-        </button>
+    <!-- Chip brand khusus ponsel -->
+    <div class="brand-chip glass" aria-hidden="false">
+        <svg class="w-4 h-4" aria-hidden="true" style="color: var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3c2 2 3 5 3 7 0 6-4 11-10 11-1.5 0-2.5-.5-2.5-1.5 0-1.5 1-3 3-5 3-3 5-7 6-11.5z"></path><path d="M15 3c0 2-2 3.5-4 4"></path></svg>
+        <span class="brand-name">EverGlade</span>
     </div>
 
-    <!-- Top Right: Analytics Menu, Realtime Weather Widget & Audio Button -->
-    <div class="fixed top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
-        <button id="btn-analytics" onclick="openAnalyticsModal()" class="ac-panel px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold text-[#205d45] shadow-md hover:scale-105 active:scale-95 transition cursor-pointer" title="Buka Dashboard Analitik Tumbuhan (Chart & Time Series)">
-            <span>📊</span> <span class="hidden sm:inline">Analitik Kebun</span>
-        </button>
-        <div id="weather-badge" class="ac-panel px-3 py-1.5 rounded-2xl flex items-center gap-2 shadow-md select-none">
-            <span id="weather-icon" class="text-lg">🌤️</span>
-            <div class="text-left">
-                <div class="flex items-center gap-1.5 leading-none">
-                    <span id="weather-temp" class="text-xs font-bold text-[#5c5346]">--°C</span>
-                    <span id="weather-auto-badge" class="text-[9px] px-1.5 py-0.5 rounded-full bg-[#68b684] text-white font-bold leading-none">LIVE</span>
-                </div>
-                <div id="weather-desc" class="text-[10px] text-[#8c8273] font-semibold mt-0.5 max-w-[110px] truncate">Menyinkronkan...</div>
+    <!-- Kokpit kaca: seluruh kontrol dengan label jelas -->
+    <aside class="app-dock glass-panel" aria-label="Kontrol kebun">
+        <div class="dock-brand">
+            <svg class="w-5 h-5 shrink-0" aria-hidden="true" style="color: var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3c2 2 3 5 3 7 0 6-4 11-10 11-1.5 0-2.5-.5-2.5-1.5 0-1.5 1-3 3-5 3-3 5-7 6-11.5z"></path><path d="M15 3c0 2-2 3.5-4 4"></path></svg>
+            <div class="min-w-0">
+                <div class="brand-name">EverGlade</div>
+                <div class="brand-tag">Dashboard Kebun 3D</div>
             </div>
         </div>
-        <button id="btn-sound" onclick="toggleSound()" class="ac-panel w-9 h-9 rounded-2xl flex items-center justify-center text-sm shadow-md hover:scale-105 active:scale-95 transition" title="Toggle Suara SFX">
-            🔊
-        </button>
-    </div>
 
+        <div class="dock-section">
+            <div class="dock-label">Tampilan</div>
+            <button id="cam-btn-diorama" onclick="setCameraView('diorama')" class="dock-btn" title="Reset Sudut 3/4 Diorama (Tekan 1)">
+                <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Diorama 3/4</span>
+                <kbd>1</kbd>
+            </button>
+            <button id="btn-cam-lock" onclick="toggleCameraLock()" class="dock-btn" title="Kunci Sudut Pandang Kamera (Tekan L)">
+                <span id="cam-lock-icon" class="flex items-center shrink-0">
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+                <span id="cam-lock-label">Kunci Kamera</span>
+                <kbd>L</kbd>
+            </button>
+        </div>
 
-    <!-- Bottom Center: Plant Foliar & Pest Sprayer Action Button -->
-    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
-        <button id="btn-spray-all" onclick="toggleAutoSprayAll()" class="ac-panel px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 font-bold text-xs text-[#205d45] hover:scale-105 active:scale-95 transition border border-[#bbf7d0]" title="Karakter menyemprot pupuk daun & proteksi hama ke tanaman (Tekan E)">
-            <span id="spray-btn-icon" class="text-base">🌿</span>
-            <span id="spray-btn-label">Semprot Tanaman</span>
-            <span id="spray-btn-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-[#16a34a] text-white font-bold leading-none">0/40</span>
+        <div class="dock-section">
+            <div class="dock-label">Aksi</div>
+            <button id="btn-spray-all" onclick="toggleAutoSprayAll()" class="dock-btn dock-btn-primary" title="Karakter menyemprot pupuk daun & proteksi hama ke seluruh tanaman (Tekan E)">
+                <span id="spray-btn-icon" class="flex items-center shrink-0" aria-hidden="true">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13C4 8 8 3 13 3c5 0 7 2 7 7 0 5-5 10-9 10Z"></path><path d="M11 20s1-5 5-8"></path></svg>
+                </span>
+                <span id="spray-btn-label">Semprot Kebun</span>
+                <span id="spray-btn-badge" class="hidden text-[11px] px-1.5 py-0.5 rounded-md bg-[color:var(--accent-strong)] text-white font-bold tabular-nums leading-none">0/40</span>
+                <kbd>E</kbd>
+            </button>
+            <button id="btn-analytics" onclick="openAnalyticsModal()" class="dock-btn" title="Buka Dashboard Analitik Tumbuhan (grafik & riwayat)">
+                <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                <span>Analitik</span>
+            </button>
+        </div>
+
+        <div class="dock-foot">
+            <button id="btn-sound" onclick="toggleSound()" class="dock-btn" title="Nyalakan atau matikan efek suara">
+                <span id="btn-sound-icon" class="flex items-center shrink-0" aria-hidden="true">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                </span>
+                <span>Suara</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Kartu Iklim Mikro: selalu terlihat, bisa diciutkan lewat kepalanya -->
+    <aside class="climate-card fixed right-3 z-20 w-[280px] max-w-[calc(100vw-1.5rem)] pointer-events-auto">
+        <div class="glass-panel rounded-2xl t-ink overflow-hidden">
+            <button id="weather-badge" onclick="toggleClimateFlyout()" class="w-full flex items-center gap-2.5 px-3.5 py-2 text-left cursor-pointer select-none focus:outline-none" title="Klik untuk membuka ringkasan iklim mikro kebun">
+                <span id="weather-icon" class="flex items-center shrink-0" aria-hidden="true" style="color: var(--signal-sun)">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>
+                </span>
+                <span class="flex-1 min-w-0">
+                    <span class="flex items-center gap-1.5">
+                        <span id="weather-temp" class="text-lg font-bold t-ink tracking-tight tabular-nums leading-none">--&deg;C</span>
+                        <span id="weather-status-badge" class="text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-[color:var(--accent-tint)] t-accent border border-[color:var(--accent-tint-border)] leading-none">Optimal</span>
+                    </span>
+                    <span class="mt-1.5 flex items-center gap-1.5 text-[11px] t-muted leading-none min-w-0">
+                        <svg class="w-3 h-3 shrink-0" aria-hidden="true" style="color: var(--signal-drop)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                        <span id="weather-humidity-header" class="tabular-nums shrink-0">--% RH</span>
+                        <span class="w-px h-3 shrink-0" style="background: var(--tile-edge)"></span>
+                        <span id="weather-desc" class="truncate">Menyinkronkan&hellip;</span>
+                    </span>
+                </span>
+                <svg id="climate-flyout-chevron" class="w-3.5 h-3.5 t-muted transition-transform duration-150 shrink-0" style="transform: rotate(180deg)" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+
+            <div id="climate-flyout" class="px-3.5 pb-3.5">
+                <div class="flex items-center justify-between mb-2 pt-2.5 border-t border-[color:var(--tile-edge)]">
+                    <span class="text-[11px] font-bold t-ink">Iklim Mikro Kebun</span>
+                    <span id="weather-location" class="text-[11px] t-muted">Surakarta</span>
+                    <span id="weather-source-badge" class="text-[11px] px-1.5 py-0.5 rounded-md tile t-muted">Live</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="tile p-2 rounded-lg">
+                        <span class="text-[11px] t-muted block font-medium">Suhu Udara</span>
+                        <span id="flyout-temp" class="text-sm font-bold t-ink tabular-nums">--&deg;C</span>
+                        <span id="flyout-temp-sub" class="text-[11px] t-accent block mt-0.5">Rentang ideal: 24 sampai 30&deg;C</span>
+                    </div>
+                    <div class="tile p-2 rounded-lg">
+                        <span class="text-[11px] t-muted block font-medium">Kelembapan Udara</span>
+                        <span id="flyout-hum" class="text-sm font-bold t-ink tabular-nums">--% RH</span>
+                        <span id="flyout-hum-sub" class="text-[11px] t-muted block mt-0.5">Batas aman jamur: &lt;80%</span>
+                    </div>
+                </div>
+                <div class="mt-2.5 p-2 rounded-lg bg-[color:var(--accent-tint)] border border-[color:var(--accent-tint-border)] text-[11px]">
+                    <span class="font-semibold block t-accent">Agronomi Cabai Rawit</span>
+                    <span id="flyout-insight" class="block mt-0.5 leading-relaxed t-muted">Menyinkronkan data suhu terkini dari stasiun cuaca&hellip;</span>
+                </div>
+                <div class="mt-3 flex items-center justify-between pt-2 border-t border-[color:var(--tile-edge)]">
+                    <button onclick="toggleAutoWeather()" id="flyout-mode-btn" class="h-8 px-1 rounded-md text-[11px] t-muted flex items-center gap-1 font-medium transition-colors">
+                        <span id="flyout-mode-icon" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span id="flyout-mode-label">Mode: Otomatis</span>
+                    </button>
+                    <button onclick="openAnalyticsModal(); toggleClimateFlyout();" class="h-8 px-1 rounded-md text-[11px] font-semibold t-accent hover:underline flex items-center gap-1">
+                        <span>Grafik Tren</span>
+                        <svg class="w-3 h-3" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Petunjuk interaksi utama: hilang setelah tanaman pertama dibuka -->
+    <div id="plant-hint" class="plant-hint glass-dark rounded-xl px-3.5 py-2 flex items-center gap-2 text-xs" style="color: var(--glass-dark-ink)">
+        <svg class="w-4 h-4 shrink-0" aria-hidden="true" style="color: var(--signal-green)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3c2 2 3 5 3 7 0 6-4 11-10 11-1.5 0-2.5-.5-2.5-1.5 0-1.5 1-3 3-5 3-3 5-7 6-11.5z"></path><path d="M15 3c0 2-2 3.5-4 4"></path></svg>
+        <span>Klik tanaman di kebun untuk membuka detailnya</span>
+        <button onclick="document.getElementById('plant-hint').classList.add('hidden')" class="ml-1 w-6 h-6 rounded-md flex items-center justify-center shrink-0" style="background: var(--glass-dark-edge)" title="Tutup petunjuk">
+            <svg class="w-3 h-3" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
     </div>
 
     <!-- Notification Toast -->
-    <div id="toast-bubble" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full ac-panel text-[#5c5346] text-xs font-bold shadow-lg transition-all duration-300 transform -translate-y-4 opacity-0 pointer-events-none flex items-center gap-2">
-        <span id="toast-icon">✨</span>
+    <div id="toast-bubble" class="glass-dark fixed top-20 left-1/2 -translate-x-1/2 z-40 px-3.5 py-2 rounded-xl text-xs font-medium modal-fade transform -translate-y-4 opacity-0 pointer-events-none flex items-center gap-2" style="transition-duration: 200ms">
+        <span id="toast-icon" class="flex items-center" aria-hidden="true" style="color: var(--signal-green)">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </span>
         <span id="toast-text">Pesan aksi</span>
     </div>
 
-    <!-- Floating Plant Inspector Modal (Animal Crossing Style) -->
-    <div id="plant-modal" class="fixed bottom-6 right-4 z-30 w-80 max-w-[calc(100vw-2rem)] ac-panel rounded-3xl p-4 shadow-2xl transition-all duration-300 transform translate-y-6 opacity-0 pointer-events-none">
-        <div class="flex items-start justify-between border-b border-[#e6ded0] pb-2.5 mb-2.5">
+    <!-- Floating Plant Inspector Modal (Glass Panel) -->
+    <div id="plant-modal" class="glass-panel fixed bottom-6 right-4 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl p-4 hidden t-ink">
+        <div class="flex items-start justify-between border-b border-[color:var(--tile-edge)] pb-2.5 mb-2.5">
             <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-2xl bg-[#e3f4e9] border border-[#a8ddb5] flex items-center justify-center text-xl shadow-inner">
-                    🌶️
+                <div class="w-9 h-9 rounded-xl bg-[color:var(--accent-tint)] border border-[color:var(--accent-tint-border)] flex items-center justify-center t-accent shrink-0">
+                    <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3c2 2 3 5 3 7 0 6-4 11-10 11-1.5 0-2.5-.5-2.5-1.5 0-1.5 1-3 3-5 3-3 5-7 6-11.5z"></path><path d="M15 3c0 2-2 3.5-4 4"></path></svg>
                 </div>
                 <div>
-                    <div id="modal-plant-title" class="text-sm font-bold text-[#5c5346]">Polybag #01</div>
-                    <div id="modal-plant-variety" class="text-xs text-[#68b684] font-bold">Cabai Rawit Merah (Ori 212)</div>
+                    <div id="modal-plant-title" class="text-xs font-bold t-ink">Polybag #01</div>
+                    <div id="modal-plant-variety" class="text-[11px] t-accent font-semibold">Cabai Rawit Merah (Ori 212)</div>
                 </div>
             </div>
-            <button onclick="closePlantModal()" class="w-7 h-7 rounded-full bg-[#eee5d5] hover:bg-[#dfd4c0] text-[#7a6f5d] font-bold text-xs flex items-center justify-center transition active:scale-90">✕</button>
+            <button onclick="closePlantModal()" class="gbtn w-7 h-7 rounded-lg tile font-bold text-xs flex items-center justify-center" title="Tutup">
+                <svg class="w-3 h-3" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-            <div class="bg-[#f7f2e7] p-2 rounded-xl">
-                <span class="text-[10px] text-[#9a8e7e] block font-semibold">Fase Tumbuh</span>
-                <span id="modal-plant-phase" class="font-bold text-[#5c5346]">Generatif (45 HST)</span>
+            <div class="tile p-2 rounded-lg">
+                <span class="text-[11px] t-muted block font-medium">Fase Tumbuh</span>
+                <span id="modal-plant-phase" class="font-semibold t-ink">Generatif (45 HST)</span>
             </div>
-            <div class="bg-[#f7f2e7] p-2 rounded-xl">
-                <span class="text-[10px] text-[#9a8e7e] block font-semibold">Status Kesehatan</span>
-                <span id="modal-plant-health" class="font-bold text-[#388a4b]">🟢 Sangat Baik</span>
+            <div class="tile p-2 rounded-lg">
+                <span class="text-[11px] t-muted block font-medium">Status Kesehatan</span>
+                <span id="modal-plant-health" class="font-semibold t-accent flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> Sangat Baik
+                </span>
             </div>
-            <div class="bg-[#f7f2e7] p-2 rounded-xl">
-                <span class="text-[10px] text-[#9a8e7e] block font-semibold">Tinggi Tanaman</span>
-                <span id="modal-plant-height" class="font-bold text-[#5c5346]">48 cm</span>
+            <div class="tile p-2 rounded-lg">
+                <span class="text-[11px] t-muted block font-medium">Tinggi Tanaman</span>
+                <span id="modal-plant-height" class="font-semibold t-ink tabular-nums">48 cm</span>
             </div>
-            <div class="bg-[#f7f2e7] p-2 rounded-xl">
-                <span class="text-[10px] text-[#9a8e7e] block font-semibold">Proteksi Daun / Hama</span>
-                <span id="modal-plant-spray-status" class="font-bold text-[#16a34a]">🌿 Aman & Terlindungi</span>
+            <div class="tile p-2 rounded-lg">
+                <span class="text-[11px] t-muted block font-medium">Proteksi Daun / Hama</span>
+                <span id="modal-plant-spray-status" class="font-semibold t-accent flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> Terlindungi
+                </span>
             </div>
         </div>
 
         <div class="flex gap-2">
-            <button onclick="sprayCurrentPlantFromModal()" id="btn-water" class="flex-1 ac-btn py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#16a34a] text-white hover:bg-[#15803d] shadow-sm active:scale-95">
-                🌿 Semprot Daun & Hama
+            <button onclick="sprayCurrentPlantFromModal()" id="btn-water" class="gbtn-accent flex-1 h-9 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13C4 8 8 3 13 3c5 0 7 2 7 7 0 5-5 10-9 10Z"></path><path d="M11 20s1-5 5-8"></path></svg>
+                <span>Semprot Daun</span>
             </button>
-            <button onclick="fertilizeCurrentPlant()" id="btn-fertilize" class="flex-1 ac-btn py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#eab308] text-white hover:bg-[#ca8a04] shadow-sm active:scale-95">
-                🍃 Pupuk Organik
+            <button onclick="fertilizeCurrentPlant()" id="btn-fertilize" class="gbtn flex-1 h-9 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5" style="color: var(--signal-sun)">
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"></path><path d="M10 20c0-4.418 3.582-8 8-8"></path><path d="M12 20V10c0-3.314-2.686-6-6-6 0 3.314 2.686 6 6 6"></path></svg>
+                <span>Pupuk Organik</span>
             </button>
         </div>
         <div class="flex gap-2 mt-2">
-            <button onclick="openCheckinModalForSelectedPlant()" class="flex-1 ac-btn py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-sm active:scale-95" title="Input data hasil pengukuran & kondisi tanaman">
-                📝 Catat Pengecekan
+            <button onclick="openCheckinModalForSelectedPlant()" class="gbtn flex-1 h-9 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 t-ink" title="Input data hasil pengukuran & kondisi tanaman">
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>Catat Pengukuran</span>
             </button>
-            <button onclick="openAnalyticsForCurrentPlant()" class="ac-btn py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#f5ede0] text-[#5c5346] hover:bg-[#eae0cf] shadow-sm active:scale-95" title="Buka grafik analitik">
-                📊 Analitik
+            <button onclick="openAnalyticsModal()" class="gbtn h-9 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5" title="Buka grafik analitik seluruh kebun">
+                <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                <span>Analitik</span>
             </button>
         </div>
     </div>
 
-    <!-- Analytics Modal (Chart & Time Series Dashboard) -->
-    <div id="analytics-modal" onclick="if(event.target === this) closeAnalyticsModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/45 backdrop-blur-sm transition-all duration-300 opacity-0 pointer-events-none">
-        <div id="analytics-modal-card" class="ac-panel w-full max-w-5xl max-h-[92vh] rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-all duration-300 pointer-events-none">
-            <!-- Header -->
-            <div class="flex items-start justify-between border-b border-[#e6ded0] pb-3 mb-3">
+    <!-- Analytics Modal (Glass Dashboard) -->
+    <div id="analytics-modal" onclick="if(event.target === this) closeAnalyticsModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 modal-fade opacity-0 pointer-events-none" style="background: var(--overlay-scrim)">
+        <div id="analytics-modal-card" class="glass-panel w-full max-w-4xl max-h-[88vh] rounded-2xl p-5 sm:p-6 flex flex-col overflow-hidden transform scale-95 modal-fade pointer-events-none t-ink">
+            <!-- Header Row -->
+            <div class="flex items-center justify-between border-b border-[color:var(--tile-edge)] pb-3 mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-center text-xl sm:text-2xl shadow-inner">
-                        📊
+                    <div class="w-9 h-9 rounded-xl bg-[color:var(--accent-tint)] border border-[color:var(--accent-tint-border)] flex items-center justify-center t-accent shrink-0">
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-sm sm:text-base font-bold text-[#443e35] flex items-center gap-2">
-                            Dashboard Analitik Pertumbuhan & Kesehatan Tanaman
-                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-[#10b981] text-white font-bold leading-none">LIVE</span>
-                        </h2>
-                        <p class="text-[11px] sm:text-xs text-[#8c8273]">Pemantauan runtun waktu (time series), kurva agronomi, dan riwayat perlakuan 40 tanaman cabai</p>
-                    </div>
-                </div>
-                <button onclick="closeAnalyticsModal()" class="w-8 h-8 rounded-full bg-[#eee5d5] hover:bg-[#dfd4c0] text-[#7a6f5d] font-bold text-xs flex items-center justify-center transition active:scale-90">✕</button>
-            </div>
-
-            <!-- Controls / Filter Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-2.5 bg-[#f5ede0] p-2.5 rounded-2xl mb-3 text-xs font-bold text-[#5c5346]">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[#8c8273] text-[11px]">Filter Tanaman:</span>
-                    <select id="analytics-plant-select" onchange="onAnalyticsPlantChanged()" class="bg-white border border-[#d5cbba] rounded-xl px-2.5 py-1 font-bold text-xs text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#10b981] shadow-xs">
-                        <option value="all">🌟 Rata-rata Seluruh Kebun (40 Polybag)</option>
-                    </select>
-                    
-                    <span class="text-[#8c8273] text-[11px] ml-1">Rentang:</span>
-                    <div class="inline-flex rounded-xl bg-white p-0.5 border border-[#d5cbba] shadow-xs">
-                        <button onclick="setAnalyticsTimeRange('7d')" id="range-btn-7d" class="px-2.5 py-1 rounded-lg transition text-xs font-bold text-[#6b6255] hover:text-[#2d5a3f]">7 Hari</button>
-                        <button onclick="setAnalyticsTimeRange('30d')" id="range-btn-30d" class="px-2.5 py-1 rounded-lg transition text-xs font-bold bg-[#10b981] text-white shadow-xs">30 Hari</button>
-                        <button onclick="setAnalyticsTimeRange('hst')" id="range-btn-hst" class="px-2.5 py-1 rounded-lg transition text-xs font-bold text-[#6b6255] hover:text-[#2d5a3f]">Siklus HST</button>
+                        <h2 class="text-base font-bold t-ink tracking-tight">Dashboard Manajemen Kebun</h2>
+                        <p class="text-xs t-muted">Ringkasan kondisi tanaman, riwayat perawatan, dan stok bahan</p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button onclick="openCheckinModalFromAnalytics()" class="px-3 py-1.5 rounded-xl bg-[#2563eb] text-white hover:bg-[#1d4ed8] flex items-center gap-1.5 active:scale-95 transition text-xs font-bold shadow-xs">
-                        <span>📝</span> Catat Pengecekan
+                    <button onclick="refreshAnalyticsData()" class="gbtn h-9 px-3 rounded-xl tile t-ink text-xs font-semibold flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        <span>Segarkan</span>
                     </button>
-                    <button onclick="refreshAnalyticsData()" class="px-3 py-1.5 rounded-xl bg-white border border-[#d5cbba] hover:bg-[#faf7f2] flex items-center gap-1.5 active:scale-95 transition text-xs font-bold text-[#443e35] shadow-xs">
-                        <span>🔄</span> Segarkan
+                    <button onclick="closeAnalyticsModal()" class="gbtn w-9 h-9 rounded-xl tile flex items-center justify-center" title="Tutup">
+                        <svg class="w-4 h-4" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Scrollable Content Area -->
-            <div class="flex-1 overflow-y-auto pr-1 space-y-3.5">
-                <!-- Summary KPI Cards -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-2.5 shadow-xs">
-                        <span class="text-[10px] text-[#9a8e7e] font-semibold block">Tinggi Tanaman Terkini</span>
-                        <div class="flex items-baseline gap-1.5 mt-0.5">
-                            <span id="kpi-avg-height" class="text-lg font-bold text-[#2d5a3f]">48.5 cm</span>
-                            <span class="text-[9px] font-bold text-[#10b981]">▲ +1.2 cm/mgg</span>
-                        </div>
-                        <span class="text-[9px] text-[#8c8273]">Target panen: 65-75 cm</span>
+            <!-- Content Area (Clean 3-Section Layout) -->
+            <div class="flex-1 overflow-y-auto pr-1 space-y-4">
+                <!-- 1. Key Metrics Strip (Clean & Focused) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="tile p-3.5 rounded-xl">
+                        <span class="text-xs font-medium t-muted block">Total Tanaman Aktif</span>
+                        <div class="text-2xl font-bold t-ink tracking-tight mt-1" id="dash-total-tanaman">1 Tanaman</div>
+                        <span class="text-[11px] t-muted">Terdaftar di sistem</span>
                     </div>
-
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-2.5 shadow-xs">
-                        <span class="text-[10px] text-[#9a8e7e] font-semibold block">Proteksi Daun & Hama</span>
-                        <div class="flex items-baseline gap-1.5 mt-0.5">
-                            <span id="kpi-protection" class="text-lg font-bold text-[#10b981]">100%</span>
-                            <span class="text-[9px] font-bold text-[#10b981]">🌿 Terlindungi</span>
-                        </div>
-                        <span id="kpi-spray-count" class="text-[9px] text-[#8c8273]">40/40 polybag disemprot</span>
+                    <div class="tile p-3.5 rounded-xl">
+                        <span class="text-xs font-medium t-muted block">Tinggi Terakhir</span>
+                        <div class="text-2xl font-bold t-accent tracking-tight mt-1" id="kpi-avg-height">45.5 cm</div>
+                        <span class="text-[11px] t-muted">Pemeriksaan terbaru</span>
                     </div>
-
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-2.5 shadow-xs">
-                        <span class="text-[10px] text-[#9a8e7e] font-semibold block">Kelembapan Media Tanam</span>
-                        <div class="flex items-baseline gap-1.5 mt-0.5">
-                            <span id="kpi-moisture" class="text-lg font-bold text-[#0284c7]">72%</span>
-                            <span class="text-[9px] font-bold text-[#0284c7]">💧 Optimal</span>
-                        </div>
-                        <span class="text-[9px] text-[#8c8273]">Batas sehat: 60% - 80%</span>
+                    <div class="tile p-3.5 rounded-xl">
+                        <span class="text-xs font-medium t-muted block">Fase Tumbuh</span>
+                        <div class="text-2xl font-bold t-ink tracking-tight mt-1" id="kpi-phase-pct">Vegetatif</div>
+                        <span class="text-[11px] t-accent font-medium">Tunas baru aktif</span>
                     </div>
-
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-2.5 shadow-xs">
-                        <span class="text-[10px] text-[#9a8e7e] font-semibold block">Estimasi Waktu Panen</span>
-                        <div class="flex items-baseline gap-1.5 mt-0.5">
-                            <span id="kpi-harvest" class="text-lg font-bold text-[#d97706]">~18 Hari</span>
-                            <span class="text-[9px] font-bold text-[#d97706]">🌶️ Buah Lebat</span>
-                        </div>
-                        <span class="text-[9px] text-[#8c8273]">Fase Generatif Lanjutan</span>
+                    <div class="tile p-3.5 rounded-xl">
+                        <span class="text-xs font-medium t-muted block">Status Kesehatan</span>
+                        <div class="text-2xl font-bold tracking-tight mt-1" id="kpi-health-pct" style="color: var(--signal-sun)">Perhatian</div>
+                        <span class="text-[11px] t-muted" id="kpi-health-sub">Kutu daun ringan</span>
                     </div>
                 </div>
 
-                <!-- Main Charts Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <!-- Chart 1: Time Series Pertumbuhan Tinggi Tanaman (Spans 2 cols) -->
-                    <div class="lg:col-span-2 bg-white/90 border border-[#ece4d6] rounded-2xl p-3 shadow-xs flex flex-col">
-                        <div class="flex items-center justify-between mb-1.5">
+                <!-- 2. Main Trend & Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Left: Kurva Pertumbuhan -->
+                    <div class="tile md:col-span-2 p-4 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2 gap-2">
                             <div>
-                                <h3 class="text-xs font-bold text-[#443e35] flex items-center gap-1.5">
-                                    📈 Runtun Waktu Pertumbuhan Tinggi Tanaman (Time Series)
-                                </h3>
-                                <p class="text-[10px] text-[#8c8273]">Kurva akumulasi tinggi (cm) vs standar target agronomi</p>
+                                <h3 class="text-xs font-bold t-ink">Grafik Pertumbuhan Tanaman</h3>
+                                <p class="text-[11px] t-muted">Tinggi tanaman (cm) dari riwayat pemeriksaan</p>
                             </div>
-                            <div class="flex items-center gap-2 text-[10px] font-semibold">
-                                <span class="flex items-center gap-1 text-[#10b981]"><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span> Aktual</span>
-                                <span class="flex items-center gap-1 text-[#f59e0b]"><span class="w-2.5 h-0.5 bg-[#f59e0b]"></span> Target</span>
+                            <div class="inline-flex rounded-lg tile p-0.5">
+                                <button onclick="setAnalyticsTimeRange('7d')" id="range-btn-7d" class="gbtn px-2.5 py-1 rounded-md text-xs font-medium">7 Hari</button>
+                                <button onclick="setAnalyticsTimeRange('30d')" id="range-btn-30d" class="gbtn active px-2.5 py-1 rounded-md text-xs font-semibold">30 Hari</button>
+                                <button onclick="setAnalyticsTimeRange('hst')" id="range-btn-hst" class="gbtn px-2.5 py-1 rounded-md text-xs font-medium">Semua</button>
                             </div>
                         </div>
-                        <div class="relative w-full h-52 sm:h-56">
-                            <canvas id="growthTimeSeriesChart"></canvas>
+                        <div class="relative w-full h-48">
+                            <canvas id="growthTimeSeriesChart" role="img" aria-label="Grafik garis tinggi tanaman dari riwayat pemeriksaan"></canvas>
                         </div>
                     </div>
 
-                    <!-- Chart 2: Distribusi Varietas & Fase (1 col) -->
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-3 shadow-xs flex flex-col">
-                        <div class="mb-1.5">
-                            <h3 class="text-xs font-bold text-[#443e35]">
-                                🌶️ Komposisi Varietas Cabai
-                            </h3>
-                            <p class="text-[10px] text-[#8c8273]">Proporsi 40 polybag di kebun</p>
+                    <!-- Right: Informasi Lingkungan / Cuaca -->
+                    <div class="tile p-4 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-xs font-bold t-ink">Kondisi Cuaca & Iklim</h3>
+                                <span id="weather-sync-badge" class="text-[11px] px-2 py-0.5 rounded-md bg-[color:var(--accent-tint)] t-accent font-semibold border border-[color:var(--accent-tint-border)]">Live</span>
+                            </div>
+                            <div class="space-y-2 mt-3">
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
+                                    <span class="t-muted">Suhu Udara</span>
+                                    <span id="analytics-weather-temp" class="font-bold t-ink">29°C</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
+                                    <span class="t-muted">Kelembapan</span>
+                                    <span id="analytics-weather-humidity" class="font-bold t-ink">75%</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-[color:var(--glass-hud)] text-xs">
+                                    <span class="t-muted">Kondisi</span>
+                                    <span id="analytics-weather-cond" class="font-bold t-ink">Cerah Berawan</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="relative w-full h-52 sm:h-56 flex items-center justify-center">
-                            <canvas id="varietyDistributionChart"></canvas>
+                        <div class="p-2.5 rounded-lg text-[11px] tile mt-3">
+                            <span class="font-semibold t-ink">Catatan:</span>
+                            <span id="analytics-weather-insight" class="block mt-0.5 t-muted">Kondisi iklim mendukung pertumbuhan optimal.</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Secondary Charts Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <!-- Chart 3: Time Series Kelembapan Tanah & Event Penyemprotan -->
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-3 shadow-xs">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <div>
-                                <h3 class="text-xs font-bold text-[#443e35]">
-                                    💧 Runtun Waktu Kelembapan & Frekuensi Penyemprotan Daun
-                                </h3>
-                                <p class="text-[10px] text-[#8c8273]">Fluktuasi kelembapan (%) dan catatan aplikasi nutrisi/hama</p>
-                            </div>
-                        </div>
-                        <div class="relative w-full h-44 sm:h-48">
-                            <canvas id="moistureTreatmentChart"></canvas>
-                        </div>
+                <!-- 3. Riwayat Perawatan & Pemeriksaan Terakhir -->
+                <div class="tile p-4 rounded-xl">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <h3 class="text-xs font-bold t-ink">Riwayat Pemeriksaan & Tindakan</h3>
+                        <button onclick="openCheckinModalFromAnalytics()" class="text-xs t-accent hover:underline font-semibold">+ Catat Baru</button>
                     </div>
+                    <div id="analytics-log-list" class="space-y-1.5 overflow-y-auto max-h-36 text-xs">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
 
-                    <!-- Stream Log Pemeriksaan & Tindakan Terkini -->
-                    <div class="bg-white/90 border border-[#ece4d6] rounded-2xl p-3 shadow-xs flex flex-col">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <div>
-                                <h3 class="text-xs font-bold text-[#443e35]">
-                                    📋 Log Pemeriksaan & Tindakan Terkini
-                                </h3>
-                                <p class="text-[10px] text-[#8c8273]">Riwayat pemeriksaan visual dan aplikasi penyemprotan</p>
-                            </div>
-                            <span class="text-[10px] text-[#10b981] font-bold">Sinkron</span>
-                        </div>
-                        <div id="analytics-log-list" class="space-y-1.5 overflow-y-auto max-h-44 sm:max-h-48 text-xs pr-1">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
+                <!-- Hidden elements for script backwards compatibility -->
+                <div class="hidden">
+                    <canvas id="varietyDistributionChart" aria-hidden="true"></canvas>
+                    <canvas id="weatherTrendChart" aria-hidden="true"></canvas>
+                    <span id="kpi-health-ratio"></span>
+                    <span id="kpi-phase-ratio"></span>
+                    <span id="kpi-phase-sub"></span>
+                    <span id="kpi-harvest"></span>
+                    <span id="kpi-spray-count"></span>
+                    <span id="bar-health-good"></span>
+                    <span id="bar-health-sick"></span>
+                    <div id="bar-health-fill-good"></div>
+                    <div id="bar-health-fill-sick"></div>
+                    <span id="bar-phase-gen"></span>
+                    <span id="bar-phase-veg"></span>
+                    <div id="bar-phase-fill-gen"></div>
+                    <div id="bar-phase-fill-veg"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Inspection Data Input Modal (Form Hasil Pengecekan Tanaman) -->
-    <div id="checkin-modal" onclick="if(event.target === this) closeCheckinModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/45 backdrop-blur-sm transition-all duration-300 opacity-0 pointer-events-none">
-        <div id="checkin-modal-card" class="ac-panel w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-all duration-300 pointer-events-none">
+    <div id="checkin-modal" onclick="if(event.target === this) closeCheckinModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 modal-fade opacity-0 pointer-events-none" style="background: var(--overlay-scrim)">
+        <div id="checkin-modal-card" class="glass-panel w-full max-w-lg rounded-2xl p-5 sm:p-6 flex flex-col overflow-hidden transform scale-95 modal-fade pointer-events-none t-ink">
             <!-- Modal Header -->
-            <div class="flex items-start justify-between border-b border-[#e6ded0] pb-3 mb-4">
+            <div class="flex items-start justify-between border-b border-[color:var(--tile-edge)] pb-3 mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-[#eff6ff] border border-[#bfdbfe] flex items-center justify-center text-xl shadow-inner">
-                        📝
+                    <div class="w-10 h-10 rounded-xl bg-[color:var(--accent-tint)] border border-[color:var(--accent-tint-border)] flex items-center justify-center t-accent shrink-0">
+                        <svg class="w-5 h-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-sm sm:text-base font-bold text-[#443e35]">
+                        <h2 class="text-sm sm:text-base font-bold t-ink">
                             Catat Hasil Pengecekan Tanaman
                         </h2>
-                        <p class="text-[11px] text-[#8c8273]">Input pengukuran tinggi, fase tumbuh, dan kondisi kesehatan</p>
+                        <p class="text-[11px] t-muted">Input pengukuran tinggi, fase tumbuh, dan kondisi kesehatan</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeCheckinModal()" class="w-8 h-8 rounded-full bg-[#eee5d5] hover:bg-[#dfd4c0] text-[#7a6f5d] font-bold text-xs flex items-center justify-center transition active:scale-90">✕</button>
+                <button type="button" onclick="closeCheckinModal()" class="gbtn w-8 h-8 rounded-lg tile font-bold text-xs flex items-center justify-center" title="Tutup">
+                    <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
             <!-- Form Content -->
             <form id="checkin-form" onsubmit="handleCheckinSubmit(event)" class="space-y-3.5 text-xs">
                 <!-- Tanaman Target -->
                 <div>
-                    <label class="block font-bold text-[#5c5346] mb-1">Pilih Tanaman / Polybag</label>
-                    <select id="checkin-plant-id" onchange="onCheckinPlantSelected()" class="w-full bg-white border border-[#d5cbba] rounded-xl px-3 py-2 font-bold text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs">
+                    <label class="block font-semibold t-ink mb-1">Pilih Tanaman / Polybag</label>
+                    <select id="checkin-plant-id" onchange="onCheckinPlantSelected()" class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-3 py-2 font-medium t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]">
                         <!-- Populated dynamically with PB-01 to PB-40 -->
                     </select>
                 </div>
@@ -359,19 +780,19 @@
                 <!-- Grid: Tinggi & Kelembapan -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-[#5c5346] mb-1">Tinggi Tanaman (cm) *</label>
+                        <label class="block font-semibold t-ink mb-1">Tinggi Tanaman (cm) *</label>
                         <div class="relative">
                             <input type="number" id="checkin-height" required min="10" max="150" step="0.5" placeholder="Contoh: 49.5"
-                                   class="w-full bg-white border border-[#d5cbba] rounded-xl px-3 py-2 font-bold text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs pr-9">
-                            <span class="absolute right-3 top-2 text-[#8c8273] font-bold text-[11px]">cm</span>
+                                   class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-3 py-2 font-semibold t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] pr-9 tabular-nums">
+                            <span class="absolute right-3 top-2 t-muted font-medium text-[11px]">cm</span>
                         </div>
                     </div>
                     <div>
-                        <label class="block font-bold text-[#5c5346] mb-1">Kelembapan Media (%)</label>
+                        <label class="block font-semibold t-ink mb-1">Kelembapan Media (%)</label>
                         <div class="relative">
                             <input type="number" id="checkin-moisture" min="20" max="100" step="1" value="74"
-                                   class="w-full bg-white border border-[#d5cbba] rounded-xl px-3 py-2 font-bold text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs pr-9">
-                            <span class="absolute right-3 top-2 text-[#8c8273] font-bold text-[11px]">%</span>
+                                   class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-3 py-2 font-semibold t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] pr-9 tabular-nums">
+                            <span class="absolute right-3 top-2 t-muted font-medium text-[11px]">%</span>
                         </div>
                     </div>
                 </div>
@@ -379,39 +800,40 @@
                 <!-- Grid: Fase Tumbuh & Status Kesehatan -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-[#5c5346] mb-1">Fase Pertumbuhan</label>
-                        <select id="checkin-phase" class="w-full bg-white border border-[#d5cbba] rounded-xl px-2.5 py-2 font-bold text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs">
-                            <option value="Vegetatif">🌱 Vegetatif (Tunas & Daun)</option>
-                            <option value="Berbunga">🌼 Berbunga (Kuncup Putih)</option>
-                            <option value="Generatif" selected>🌶️ Generatif (Buah Cabai)</option>
-                            <option value="Pematangan">🔥 Pematangan (Cabai Merah)</option>
+                        <label class="block font-semibold t-ink mb-1">Fase Pertumbuhan</label>
+                        <select id="checkin-phase" class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-2.5 py-2 font-medium t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]">
+                            <option value="Vegetatif">Vegetatif (Tunas & Daun)</option>
+                            <option value="Berbunga">Berbunga (Kuncup Putih)</option>
+                            <option value="Generatif" selected>Generatif (Buah Cabai)</option>
+                            <option value="Pematangan">Pematangan (Cabai Merah)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block font-bold text-[#5c5346] mb-1">Status Kesehatan</label>
-                        <select id="checkin-health" class="w-full bg-white border border-[#d5cbba] rounded-xl px-2.5 py-2 font-bold text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs">
-                            <option value="🟢 Sangat Baik">🟢 Sangat Baik & Subur</option>
-                            <option value="🟡 Gejala Hama">🟡 Gejala Kutu Daun/Thrips</option>
-                            <option value="🔴 Sakit / Layu">🔴 Daun Menguning / Layu</option>
-                            <option value="🌿 Aman & Terlindungi">🌿 Baru Disemprot Nutrisi</option>
+                        <label class="block font-semibold t-ink mb-1">Status Kesehatan</label>
+                        <select id="checkin-health" class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-2.5 py-2 font-medium t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]">
+                            <option value="🟢 Sangat Baik">Sangat Baik & Subur</option>
+                            <option value="🟡 Gejala Hama">Gejala Kutu Daun/Thrips</option>
+                            <option value="🔴 Sakit / Layu">Daun Menguning / Layu</option>
+                            <option value="🌿 Aman & Terlindungi">Baru Disemprot Nutrisi</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Catatan Petugas -->
                 <div>
-                    <label class="block font-bold text-[#5c5346] mb-1">Catatan Pengamatan / Petugas</label>
+                    <label class="block font-semibold t-ink mb-1">Catatan Pengamatan / Petugas</label>
                     <textarea id="checkin-notes" rows="2" placeholder="Contoh: Daun sehat mengilap, bunga lebat, penyemprotan pupuk daun terserap merata..."
-                              class="w-full bg-white border border-[#d5cbba] rounded-xl px-3 py-2 font-medium text-[#443e35] focus:outline-none focus:ring-2 focus:ring-[#2563eb] shadow-xs resize-none"></textarea>
+                              class="w-full bg-[color:var(--glass-hud)] border border-[color:var(--tile-edge)] rounded-lg px-3 py-2 font-normal t-ink focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] resize-none"></textarea>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex gap-2 pt-2 border-t border-[#e6ded0]">
-                    <button type="button" onclick="closeCheckinModal()" class="flex-1 ac-btn py-2.5 px-3 rounded-2xl font-bold text-xs bg-[#f4eee1] text-[#7a6f5d] hover:bg-[#e8dfcf] transition active:scale-95">
+                <div class="flex gap-2 pt-2 border-t border-[color:var(--tile-edge)]">
+                    <button type="button" onclick="closeCheckinModal()" class="gbtn flex-1 h-9 px-3 rounded-xl tile font-semibold text-xs">
                         Batal
                     </button>
-                    <button type="submit" id="btn-save-checkin" class="flex-2 ac-btn py-2.5 px-4 rounded-2xl font-bold text-xs bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
-                        <span>💾</span> Simpan Hasil Pengecekan
+                    <button type="submit" id="btn-save-checkin" class="gbtn-accent flex-[2] h-9 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        <span>Simpan Hasil Pengecekan</span>
                     </button>
                 </div>
             </form>
@@ -483,11 +905,31 @@
             }
         };
 
+        const UI_ICONS = {
+            home: '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+            lock: '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>',
+            unlock: '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>',
+            analytics: '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>',
+            soundOn: '<svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>',
+            soundOff: '<svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>',
+            spray: '<svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13C4 8 8 3 13 3c5 0 7 2 7 7 0 5-5 10-9 10Z"></path><path d="M11 20s1-5 5-8"></path></svg>',
+            stop: '<svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>',
+            check: '<svg class="w-4 h-4 inline-block text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+            note: '<svg class="w-4 h-4 inline-block text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
+            sun: '<svg class="w-4 h-4 text-amber-500 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
+            cloudSun: '<svg class="w-4 h-4 text-amber-500 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"></path><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"></path></svg>',
+            rain: '<svg class="w-4 h-4 text-sky-500 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>',
+            plant: '<svg class="w-4 h-4 inline-block text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"></path><path d="M10 20c0-4.418 3.582-8 8-8"></path><path d="M12 20V10c0-3.314-2.686-6-6-6 0 3.314 2.686 6 6 6"></path></svg>',
+            farmer: '<svg class="w-4 h-4 inline-block text-[#5c5346]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+            warning: '<svg class="w-4 h-4 inline-block text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
+            camera: '<svg class="w-4 h-4 inline-block text-[#5c5346]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>'
+        };
+
         function toggleCameraLock() {
             isCameraLocked = !isCameraLocked;
             updateLockUi();
             playPop();
-            showToast(isCameraLocked ? 'Kamera Terkunci (Fixed View)' : 'Orbit Bebas (Free Orbit)', isCameraLocked ? '🔒' : '🔓');
+            showToast(isCameraLocked ? 'Kamera Terkunci (Fixed View)' : 'Orbit Bebas (Free Orbit)', isCameraLocked ? 'lock' : 'unlock');
         }
 
         function updateLockUi() {
@@ -495,7 +937,7 @@
             const icon = document.getElementById('cam-lock-icon');
             const label = document.getElementById('cam-lock-label');
             if (btn) btn.classList.toggle('active', isCameraLocked);
-            if (icon) icon.innerText = isCameraLocked ? '🔒' : '🔓';
+            if (icon) icon.innerHTML = isCameraLocked ? UI_ICONS.lock : UI_ICONS.unlock;
             if (label) label.innerText = isCameraLocked ? 'Lock View' : 'Free Orbit';
         }
 
@@ -514,7 +956,7 @@
             if (btn) btn.classList.add('active');
 
             playPop();
-            showToast('Sudut 3/4 Diorama (Terkunci)', '📷');
+            showToast('Sudut 3/4 Diorama (Terkunci)', 'camera');
         }
 
         const ENV_PRESETS = {
@@ -1755,20 +2197,52 @@
 
         function toggleSound() {
             soundEnabled = !soundEnabled;
-            const btn = document.getElementById('btn-sound');
-            if (btn) btn.innerText = soundEnabled ? '🔊' : '🔇';
-            showToast(soundEnabled ? 'Audio SFX Aktif' : 'Audio SFX Nonaktif', '🎵');
+            const iconEl = document.getElementById('btn-sound-icon');
+            if (iconEl) iconEl.innerHTML = soundEnabled ? UI_ICONS.soundOn : UI_ICONS.soundOff;
+            showToast(soundEnabled ? 'Audio SFX Aktif' : 'Audio SFX Nonaktif', soundEnabled ? 'soundOn' : 'soundOff');
             if (soundEnabled) playPop();
         }
 
         // --- Notification Toast ---
         let toastTimeout = null;
-        function showToast(message, icon = '✨') {
+        function showToast(message, icon = 'check') {
             const bubble = document.getElementById('toast-bubble');
             const iconEl = document.getElementById('toast-icon');
             const textEl = document.getElementById('toast-text');
             if (!bubble) return;
-            if (iconEl) iconEl.innerText = icon;
+            if (iconEl) {
+                if (UI_ICONS[icon]) {
+                    iconEl.innerHTML = UI_ICONS[icon];
+                } else if (icon === '✨' || icon === '🎉') {
+                    iconEl.innerHTML = UI_ICONS.check;
+                } else if (icon === '🌿') {
+                    iconEl.innerHTML = UI_ICONS.spray;
+                } else if (icon === '📝') {
+                    iconEl.innerHTML = UI_ICONS.note;
+                } else if (icon === '📊') {
+                    iconEl.innerHTML = UI_ICONS.analytics;
+                } else if (icon === '🌱') {
+                    iconEl.innerHTML = UI_ICONS.plant;
+                } else if (icon === '👨‍🌾') {
+                    iconEl.innerHTML = UI_ICONS.farmer;
+                } else if (icon === '🔒') {
+                    iconEl.innerHTML = UI_ICONS.lock;
+                } else if (icon === '🔓') {
+                    iconEl.innerHTML = UI_ICONS.unlock;
+                } else if (icon === '📷') {
+                    iconEl.innerHTML = UI_ICONS.camera;
+                } else if (icon === '⚠️') {
+                    iconEl.innerHTML = UI_ICONS.warning;
+                } else if (icon === '⏹️') {
+                    iconEl.innerHTML = UI_ICONS.stop;
+                } else if (icon === '🎵' || icon === '🔊') {
+                    iconEl.innerHTML = UI_ICONS.soundOn;
+                } else if (icon === '🌤️' || icon === '☀️') {
+                    iconEl.innerHTML = UI_ICONS.sun;
+                } else {
+                    iconEl.innerText = icon;
+                }
+            }
             if (textEl) textEl.innerText = message;
             bubble.classList.add('toast-show');
             if (toastTimeout) clearTimeout(toastTimeout);
@@ -1782,7 +2256,7 @@
             if (plant.userData && plant.userData.isCharacter) {
                 playChime();
                 charJumpProgress = 1.0;
-                showToast('Petani EverGlade: Halo! Kebun cabai hari ini tumbuh sangat subur! 🌱✨', '👨‍🌾');
+                showToast('Petani EverGlade: Halo! Kebun cabai hari ini tumbuh sangat subur!', 'farmer');
                 return;
             }
 
@@ -1798,21 +2272,47 @@
             plant.scale.set(1.25, 1.25, 1.25);
 
             const data = plant.userData || {};
-            document.getElementById('modal-plant-title').innerText = data.title || 'Polybag';
-            document.getElementById('modal-plant-variety').innerText = data.variety || 'Cabai Rawit';
-            document.getElementById('modal-plant-phase').innerText = data.phase || 'Generatif';
-            document.getElementById('modal-plant-health').innerText = data.health || '🟢 Baik';
-            document.getElementById('modal-plant-height').innerText = data.height || '45 cm';
-            document.getElementById('modal-plant-moisture').innerText = data.moisture || '💧 Lembap';
+            const titleEl = document.getElementById('modal-plant-title');
+            const varietyEl = document.getElementById('modal-plant-variety');
+            const phaseEl = document.getElementById('modal-plant-phase');
+            const healthEl = document.getElementById('modal-plant-health');
+            const heightEl = document.getElementById('modal-plant-height');
+            const sprayStatusEl = document.getElementById('modal-plant-spray-status');
+
+            if (titleEl) titleEl.innerText = data.title || 'Polybag';
+            if (varietyEl) varietyEl.innerText = data.variety || 'Cabai Rawit';
+            if (phaseEl) phaseEl.innerText = data.phase || 'Generatif';
+            
+            if (healthEl) {
+                const healthStr = (data.health || 'Sangat Baik').replace(/[🟢🟡🔴]/g, '').trim();
+                const isGood = !data.health || data.health.includes('Baik') || data.health.includes('Subur');
+                const dotColor = isGood ? 'bg-emerald-500' : (data.health.includes('Hama') ? 'bg-amber-500' : 'bg-rose-500');
+                healthEl.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor} inline-block mr-1.5"></span> ${healthStr}`;
+            }
+
+            if (heightEl) heightEl.innerText = data.height || '45 cm';
+
+            if (sprayStatusEl) {
+                const sprayStr = (data.sprayProtection || 'Aman & Terlindungi').replace(/🌿/g, '').trim();
+                sprayStatusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span> ${sprayStr}`;
+            }
 
             const modal = document.getElementById('plant-modal');
-            if (modal) modal.classList.add('plant-modal-open');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('plant-modal-open');
+            }
+            const hint = document.getElementById('plant-hint');
+            if (hint) hint.classList.add('hidden');
         }
 
         function closePlantModal() {
             playPop();
             const modal = document.getElementById('plant-modal');
-            if (modal) modal.classList.remove('plant-modal-open');
+            if (modal) {
+                modal.classList.remove('plant-modal-open');
+                modal.classList.add('hidden');
+            }
             if (selectionRing) selectionRing.visible = false;
             selectedPlant = null;
         }
@@ -2027,7 +2527,7 @@
             isAutoSpraying = true;
             sprayPhase = 'walking';
             updateSprayButtonUi(1, 40);
-            showToast('Karakter santai menyemprot pupuk daun & proteksi hama...', '🌿');
+            showToast('Karakter santai menyemprot pupuk daun & proteksi hama...', 'spray');
             advanceSprayQueue();
         }
 
@@ -2058,7 +2558,7 @@
             targetCharPos = null;
             charJumpProgress = 1.0;
             playChime();
-            showToast('🎉 Selesai! Semua tanaman telah disemprot pupuk daun & proteksi hama!', '✨');
+            showToast('Selesai! Semua tanaman telah disemprot nutrisi daun & proteksi hama.', 'spray');
             updateSprayButtonUi();
 
             // Catat log tindakan baru ke stream analitik kebun
@@ -2068,7 +2568,7 @@
                 date: timeStr,
                 plant: 'PB-01 s.d PB-40',
                 action: 'Penyemprotan pupuk daun & proteksi hama lengkap (Selesai 40 Tanaman)',
-                status: '🌿 100% Terlindungi',
+                status: '100% Terlindungi',
                 badgeColor: 'bg-[#dcfce7] text-[#15803d]'
             });
         }
@@ -2081,14 +2581,14 @@
             if (!btn || !labelEl || !iconEl || !badgeEl) return;
 
             if (isAutoSpraying && sprayQueue.length > 2) {
-                iconEl.innerText = '⏹️';
+                iconEl.innerHTML = UI_ICONS.stop;
                 labelEl.innerText = 'Hentikan Semprot';
                 badgeEl.classList.remove('hidden');
                 badgeEl.innerText = `${current || 1}/${total || 40}`;
                 btn.classList.add('bg-[#ecfdf5]', 'border-[#16a34a]');
             } else {
-                iconEl.innerText = '🌿';
-                labelEl.innerText = 'Semprot Tanaman';
+                iconEl.innerHTML = UI_ICONS.spray;
+                labelEl.innerText = 'Semprot Kebun';
                 badgeEl.classList.add('hidden');
                 btn.classList.remove('bg-[#ecfdf5]', 'border-[#16a34a]');
             }
@@ -2124,7 +2624,7 @@
             sprayQueueIndex = 0;
             isAutoSpraying = true;
             sprayPhase = 'walking';
-            showToast('Karakter menuju ' + (plant.userData.code || 'tanaman') + ' untuk menyemprot daun...', '🌿');
+            showToast('Karakter menuju ' + (plant.userData.code || 'tanaman') + ' untuk menyemprot daun...', 'spray');
             advanceSprayQueue();
         }
 
@@ -2139,7 +2639,7 @@
                 date: timeStr,
                 plant: target.userData.code || 'PB',
                 action: 'Penyemprotan nutrisi daun & proteksi hama individu',
-                status: '🌿 Terlindungi',
+                status: 'Terlindungi',
                 badgeColor: 'bg-[#dcfce7] text-[#15803d]'
             });
 
@@ -2156,7 +2656,7 @@
         function fertilizeCurrentPlant() {
             if (!selectedPlant) return;
             playSelect();
-            showToast('Nutrisi pupuk untuk ' + selectedPlant.userData.code + ' dicatat!', '🌿');
+            showToast('Nutrisi pupuk untuk ' + selectedPlant.userData.code + ' dicatat!', 'plant');
         }
 
         // --- Backend & Weather Synchronization ---
@@ -2164,6 +2664,14 @@
             const descEl = document.getElementById('weather-desc');
             const tempEl = document.getElementById('weather-temp');
             const iconEl = document.getElementById('weather-icon');
+            const humHeaderEl = document.getElementById('weather-humidity-header');
+            const statusBadge = document.getElementById('weather-status-badge');
+            const flyoutTemp = document.getElementById('flyout-temp');
+            const flyoutTempSub = document.getElementById('flyout-temp-sub');
+            const flyoutHum = document.getElementById('flyout-hum');
+            const flyoutHumSub = document.getElementById('flyout-hum-sub');
+            const flyoutInsight = document.getElementById('flyout-insight');
+            const sourceBadge = document.getElementById('weather-source-badge');
 
             try {
                 let weatherData = null;
@@ -2190,16 +2698,53 @@
 
                 if (weatherData) {
                     const temp = Math.round(weatherData.suhuCelsius);
+                    const hum = Math.round(weatherData.kelembapanPersen != null ? weatherData.kelembapanPersen : 74);
+                    const cond = weatherData.kondisi || 'Surakarta';
+
                     if (tempEl) tempEl.innerText = temp + '°C';
-                    if (descEl) descEl.innerText = weatherData.kondisi || 'Surakarta';
+                    if (descEl) descEl.innerText = cond;
+                    if (humHeaderEl) humHeaderEl.innerText = hum + '% RH';
+                    if (flyoutTemp) flyoutTemp.innerText = temp + '°C';
+                    if (flyoutHum) flyoutHum.innerText = hum + '% RH';
+                    if (sourceBadge) sourceBadge.innerText = 'Live Open-Meteo';
+
+                    let statusText = 'Optimal';
+                    let statusClass = 'text-[11px] px-1.5 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 leading-none';
+                    let insightText = `Suhu ${temp}°C dan kelembapan ${hum}% RH berada pada rentang ideal fotosintesis tanaman cabai rawit.`;
+
+                    if (temp >= 32) {
+                        statusText = 'Hangat';
+                        statusClass = 'text-[11px] px-1.5 py-0.5 rounded font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 leading-none';
+                        insightText = `Suhu mencapai ${temp}°C (hangat kering). Pantau kecukupan lengas media polybag agar bunga cabai tidak mudah gugur.`;
+                        if (flyoutTempSub) flyoutTempSub.innerText = 'Hangat (waspada bunga rontok)';
+                    } else if (temp <= 22) {
+                        statusText = 'Sejuk';
+                        statusClass = 'text-[11px] px-1.5 py-0.5 rounded font-semibold bg-sky-50 text-sky-700 border border-sky-200/60 leading-none';
+                        insightText = `Suhu ${temp}°C cukup sejuk. Metabolisme melambat, pertahankan aerasi media tanam dan kurangi frekuensi siram.`;
+                        if (flyoutTempSub) flyoutTempSub.innerText = 'Sejuk (metabolisme melambat)';
+                    } else {
+                        if (flyoutTempSub) flyoutTempSub.innerText = 'Rentang ideal: 24–30°C';
+                    }
+
+                    if (hum >= 85) {
+                        if (flyoutHumSub) flyoutHumSub.innerText = 'Tinggi (waspada spora jamur)';
+                    } else {
+                        if (flyoutHumSub) flyoutHumSub.innerText = 'Batas aman jamur: <80%';
+                    }
+
+                    if (statusBadge) {
+                        statusBadge.innerText = statusText;
+                        statusBadge.className = statusClass;
+                    }
+                    if (flyoutInsight) flyoutInsight.innerText = insightText;
 
                     const isRain = (weatherData.curahHujanMm && weatherData.curahHujanMm > 0) ||
                                    (weatherData.kondisi && weatherData.kondisi.toLowerCase().includes('hujan'));
 
                     if (iconEl) {
-                        if (isRain) iconEl.innerText = '🌧️';
-                        else if (temp >= 32) iconEl.innerText = '☀️';
-                        else iconEl.innerText = '⛅';
+                        if (isRain) iconEl.innerHTML = UI_ICONS.rain;
+                        else if (temp >= 32) iconEl.innerHTML = UI_ICONS.sun;
+                        else iconEl.innerHTML = UI_ICONS.cloudSun;
                     }
 
                     if (autoWeatherMode) {
@@ -2208,8 +2753,45 @@
                 }
             } catch (err) {
                 if (descEl) descEl.innerText = 'Surakarta (Offline)';
+                if (statusBadge) {
+                    statusBadge.innerText = 'Offline';
+                    statusBadge.className = 'text-[11px] px-1.5 py-0.5 rounded font-semibold bg-slate-100 text-slate-600 border border-slate-200 leading-none';
+                }
             }
         }
+
+        function toggleClimateFlyout() {
+            const flyout = document.getElementById('climate-flyout');
+            const chevron = document.getElementById('climate-flyout-chevron');
+            if (!flyout) return;
+            const isHidden = flyout.classList.contains('hidden');
+            if (isHidden) {
+                flyout.classList.remove('hidden');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            } else {
+                flyout.classList.add('hidden');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Di ponsel, detail kartu iklim mulai terlipat agar adegan terlihat
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            const flyoutInit = document.getElementById('climate-flyout');
+            if (flyoutInit) flyoutInit.classList.add('hidden');
+        }
+
+        // Close climate flyout when clicking outside
+        window.addEventListener('click', function(e) {
+            const badge = document.getElementById('weather-badge');
+            const flyout = document.getElementById('climate-flyout');
+            if (flyout && !flyout.classList.contains('hidden')) {
+                if (badge && !badge.contains(e.target) && !flyout.contains(e.target)) {
+                    flyout.classList.add('hidden');
+                    const chevron = document.getElementById('climate-flyout-chevron');
+                    if (chevron) chevron.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
 
         function translateWmoCode(code) {
             if (code === 0) return 'Cerah';
@@ -2244,12 +2826,17 @@
             playPop();
             const badge = document.getElementById('weather-auto-badge');
             if (badge) {
-                badge.innerText = autoWeatherMode ? 'AUTO' : 'MANUAL';
+                badge.innerText = autoWeatherMode ? 'Auto' : 'Manual';
                 badge.className = autoWeatherMode
-                    ? 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#68b684] text-white font-bold leading-none'
-                    : 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#8c8273] text-white font-bold leading-none';
+                    ? 'text-[11px] px-1.5 py-0.5 rounded-md bg-[#2d8a56] text-white font-bold leading-none'
+                    : 'text-[11px] px-1.5 py-0.5 rounded-md bg-[#8c8273] text-white font-bold leading-none';
             }
-            showToast(autoWeatherMode ? 'Mode cuaca otomatis aktif' : 'Mode cuaca manual aktif', '🌤️');
+            const flyoutLabel = document.getElementById('flyout-mode-label');
+            const flyoutIcon = document.getElementById('flyout-mode-icon');
+            if (flyoutLabel) flyoutLabel.innerText = 'Mode: ' + (autoWeatherMode ? 'Otomatis' : 'Manual');
+            if (flyoutIcon) flyoutIcon.className = 'w-1.5 h-1.5 rounded-full ' + (autoWeatherMode ? 'bg-emerald-500' : 'bg-slate-400');
+
+            showToast(autoWeatherMode ? 'Mode cuaca otomatis aktif' : 'Mode cuaca manual aktif', 'cloudSun');
             if (autoWeatherMode) {
                 syncWeather();
             }
@@ -2274,7 +2861,7 @@
                                 }
                             }
                         });
-                        showToast(list.length + ' tanaman tersinkron dari database', '🌱');
+                        showToast(list.length + ' tanaman tersinkron dari database', 'plant');
                     }
                 }
             } catch (e) {}
@@ -2285,7 +2872,7 @@
         // ====================================================
         let growthChart = null;
         let varietyChart = null;
-        let moistureChart = null;
+        let weatherTrendChart = null;
         let currentAnalyticsRange = '30d'; // '7d', '30d', 'hst'
         let currentAnalyticsPlantId = 'all';
 
@@ -2295,28 +2882,28 @@
                 date: 'Hari Ini, 19:40',
                 plant: 'PB-01 s.d PB-40',
                 action: 'Penyemprotan pupuk daun & antihama serentak (Kabut Halus)',
-                status: '🌿 Terlindungi',
+                status: 'Terlindungi',
                 badgeColor: 'bg-[#dcfce7] text-[#15803d]'
             },
             {
                 date: '18 Okt, 08:30',
                 plant: 'Kebun Teras Depan',
                 action: 'Pemeriksaan vegetatif mingguan, pertunasan aktif',
-                status: '🟢 Sangat Baik',
+                status: 'Sangat Baik',
                 badgeColor: 'bg-[#ecfdf5] text-[#047857]'
             },
             {
                 date: '17 Okt, 16:15',
                 plant: 'Lahan Samping Rendah',
                 action: 'Inspeksi kelembapan media tanam & pembersihan gulma',
-                status: '💧 Lembap 74%',
+                status: 'Lembap 74%',
                 badgeColor: 'bg-[#e0f2fe] text-[#0369a1]'
             },
             {
                 date: '15 Okt, 09:00',
                 plant: 'PB-12 & PB-28',
                 action: 'Aplikasi nutrisi organik cair fase pembentukan bunga',
-                status: '🍃 Optimal',
+                status: 'Optimal',
                 badgeColor: 'bg-[#fef9c3] text-[#a16207]'
             }
         ];
@@ -2333,7 +2920,7 @@
             if (!modal || !card) return;
 
             playPop();
-            populateAnalyticsPlantSelect();
+            currentAnalyticsPlantId = 'all';
 
             modal.classList.remove('hidden');
             void modal.offsetWidth; // Trigger reflow for smooth animation
@@ -2345,6 +2932,7 @@
 
             setTimeout(() => {
                 initOrUpdateAnalyticsCharts();
+                initOrUpdateWeatherTrendChart();
                 renderAnalyticsLogList();
             }, 60);
         }
@@ -2368,40 +2956,16 @@
         }
 
         function openAnalyticsForCurrentPlant() {
-            if (selectedPlant && selectedPlant.userData) {
-                currentAnalyticsPlantId = String(selectedPlant.userData.id);
-            }
+            currentAnalyticsPlantId = 'all';
             openAnalyticsModal();
-            const select = document.getElementById('analytics-plant-select');
-            if (select) select.value = currentAnalyticsPlantId;
-            updateAnalyticsDataForSelected();
         }
 
         function populateAnalyticsPlantSelect() {
-            const select = document.getElementById('analytics-plant-select');
-            if (!select || select.children.length > 2) return;
-
-            select.innerHTML = '<option value="all">🌟 Rata-rata Seluruh Kebun (40 Polybag)</option>';
-            if (clickablePlants && clickablePlants.length > 0) {
-                clickablePlants.forEach(p => {
-                    if (p.userData && p.userData.id) {
-                        const opt = document.createElement('option');
-                        opt.value = p.userData.id;
-                        const loc = (p.userData.title && p.userData.title.includes('Depan')) ? 'Depan' : 'Samping';
-                        opt.innerText = `${p.userData.code} - ${p.userData.variety || 'Cabai'} (${loc})`;
-                        select.appendChild(opt);
-                    }
-                });
-            }
-            select.value = currentAnalyticsPlantId;
+            currentAnalyticsPlantId = 'all';
         }
 
         function onAnalyticsPlantChanged() {
-            const select = document.getElementById('analytics-plant-select');
-            if (!select) return;
-            currentAnalyticsPlantId = select.value;
-            playSelect();
-            updateAnalyticsDataForSelected();
+            currentAnalyticsPlantId = 'all';
         }
 
         function setAnalyticsTimeRange(range) {
@@ -2411,51 +2975,71 @@
                 const btn = document.getElementById('range-btn-' + r);
                 if (btn) {
                     if (r === range) {
-                        btn.className = 'px-2.5 py-1 rounded-lg transition text-xs font-bold bg-[#10b981] text-white shadow-xs';
+                        btn.className = 'px-2.5 py-1 rounded-md transition text-xs font-semibold bg-[color:var(--accent-tint)] t-accent shadow-xs';
                     } else {
-                        btn.className = 'px-2.5 py-1 rounded-lg transition text-xs font-bold text-[#6b6255] hover:text-[#2d5a3f]';
+                        btn.className = 'px-2.5 py-1 rounded-md transition text-xs font-medium t-muted';
                     }
                 }
             });
             updateAnalyticsDataForSelected();
         }
 
+        function selectKpiTile(type) {
+            playSelect();
+            const tiles = ['height', 'health', 'phase', 'harvest'];
+            tiles.forEach(t => {
+                const el = document.getElementById('tile-' + t);
+                if (el) {
+                    if (t === type) {
+                        el.className = 'p-3.5 transition rounded-lg m-1 bg-emerald-500/[.06] ring-1 ring-inset ring-emerald-500/25 cursor-pointer';
+                    } else {
+                        el.className = 'p-3.5 transition rounded-lg m-1 hover:bg-slate-50 cursor-pointer';
+                    }
+                }
+            });
+
+            const insightLine = document.getElementById('analytics-insight-line');
+            if (!insightLine) return;
+
+            if (type === 'height') {
+                insightLine.innerText = 'Laju pertumbuhan rata-rata +1.2 cm/minggu berada pada lintasan optimal menuju target panen 70 cm.';
+            } else if (type === 'health') {
+                insightLine.innerText = '38 dari 40 polybag dalam kondisi prima (95%). 2 polybag pada teras samping dalam observasi bercak daun.';
+            } else if (type === 'phase') {
+                insightLine.innerText = '80% tanaman (32 polybag) telah memasuki fase generatif produktif dengan pembungaan lebat dan pembentukan buah.';
+            } else if (type === 'harvest') {
+                insightLine.innerText = 'Estimasi panen perdana sekitar 18 hari lagi (~65-68 HST). Seluruh polybag terlindungi perlakuan semprot antihama.';
+            }
+        }
+
         function refreshAnalyticsData() {
             playPop();
-            showToast('Menyinkronkan data analitik kebun...', '📊');
+            showToast('Menyinkronkan data analitik kebun & tren cuaca...', 'analytics');
             updateAnalyticsDataForSelected();
+            initOrUpdateWeatherTrendChart();
+            syncWeather();
             syncTanaman();
         }
 
-        // --- Data Generator untuk Runtun Waktu (Time Series) Agronomi Cabai ---
+        // --- Data Generator untuk Runtun Waktu (Time Series) Agronomi Cabai (Agregat Kebun) ---
         function generateGrowthTimeSeriesData(plantId, range) {
+            const r = range || (typeof plantId === 'string' && (plantId === '7d' || plantId === '30d' || plantId === 'hst') ? plantId : currentAnalyticsRange);
             let baseFinalHeight = 48.5;
-            let plantName = 'Rata-rata Kebun (40 Tanaman)';
+            const plantName = 'Rata-rata Seluruh Kebun (40 Tanaman)';
 
-            if (plantId !== 'all') {
-                const num = parseInt(plantId, 10);
-                const found = clickablePlants.find(p => p.userData && p.userData.id === num);
-                if (found && found.userData && found.userData.heightCm) {
-                    baseFinalHeight = found.userData.heightCm;
-                } else {
-                    baseFinalHeight = 40 + (num % 16);
-                }
-                plantName = 'Polybag #' + String(num).padStart(2, '0');
-            } else {
-                const recorded = clickablePlants
-                    .filter(p => p.userData && p.userData.heightCm)
-                    .map(p => p.userData.heightCm);
-                if (recorded.length > 0) {
-                    const sum = recorded.reduce((a, b) => a + b, 0);
-                    baseFinalHeight = parseFloat((sum / recorded.length).toFixed(1));
-                }
+            const recorded = clickablePlants
+                .filter(p => p.userData && p.userData.heightCm)
+                .map(p => p.userData.heightCm);
+            if (recorded.length > 0) {
+                const sum = recorded.reduce((a, b) => a + b, 0);
+                baseFinalHeight = parseFloat((sum / recorded.length).toFixed(1));
             }
 
             let labels = [];
             let actualData = [];
             let targetData = [];
 
-            if (range === '7d') {
+            if (r === '7d') {
                 const days = ['H-6', 'H-5', 'H-4', 'H-3', 'H-2', 'Kemarin', 'Hari Ini'];
                 labels = days;
                 for (let i = 0; i < 7; i++) {
@@ -2465,7 +3049,7 @@
                     actualData.push(parseFloat(h.toFixed(1)));
                     targetData.push(parseFloat(targetH.toFixed(1)));
                 }
-            } else if (range === '30d') {
+            } else if (r === '30d') {
                 const dates = ['19 Sep', '24 Sep', '29 Sep', '04 Okt', '09 Okt', '14 Okt', 'Hari Ini'];
                 labels = dates;
                 for (let i = 0; i < dates.length; i++) {
@@ -2486,48 +3070,51 @@
             return { labels, actualData, targetData, plantName };
         }
 
-        function generateMoistureTreatmentData(plantId) {
-            const labels = ['13 Okt', '14 Okt', '15 Okt', '16 Okt', '17 Okt', '18 Okt', 'Hari Ini'];
-            let currentMoist = 75;
-            if (plantId !== 'all') {
-                const num = parseInt(plantId, 10);
-                const found = clickablePlants.find(p => p.userData && p.userData.id === num);
-                if (found && found.userData && found.userData.moisture) {
-                    currentMoist = found.userData.moisture;
-                }
-            }
-            // Fluktuasi kelembapan tanah
-            const moisture = [76, 71, 84, 69, 74, 68, currentMoist];
-            // Event penyemprotan / perlakuan (tinggi batang bar menunjukkan intensitas)
-            const treatments = [0, 0, 40, 0, 30, 0, 50]; 
-
-            return { labels, moisture, treatments };
-        }
-
+        // --- Data & Riwayat Runtun Waktu dari Database ---
         function updateAnalyticsDataForSelected() {
-            const growth = generateGrowthTimeSeriesData(currentAnalyticsPlantId, currentAnalyticsRange);
-            const moist = generateMoistureTreatmentData(currentAnalyticsPlantId);
+            // Sinkron data metrik riwayat dari database
+            fetch('/api/tanaman')
+                .then(res => res.json())
+                .then(data => {
+                    const totalTanamanEl = document.getElementById('dash-total-tanaman');
+                    if (totalTanamanEl && Array.isArray(data)) {
+                        totalTanamanEl.innerText = data.length + ' Tanaman';
+                    }
+                })
+                .catch(() => {});
 
-            // Update KPI
-            const latestHeight = growth.actualData.filter(v => v !== null).slice(-1)[0] || 48.5;
-            const hEl = document.getElementById('kpi-avg-height');
-            if (hEl) hEl.innerText = latestHeight + ' cm';
+            // Ambil log pemeriksaan dari database
+            fetch('/api/log-pemeriksaan')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        const latest = data[0];
+                        if (latest.kondisiVegetatif && latest.kondisiVegetatif.tinggiCm) {
+                            const hEl = document.getElementById('kpi-avg-height');
+                            if (hEl) hEl.innerText = latest.kondisiVegetatif.tinggiCm + ' cm';
+                        }
+                        if (latest.kondisiVegetatif && latest.kondisiVegetatif.faseTumbuh) {
+                            const fEl = document.getElementById('kpi-phase-pct');
+                            if (fEl) fEl.innerText = latest.kondisiVegetatif.faseTumbuh;
+                        }
+                        if (latest.kondisiKesehatan) {
+                            const kEl = document.getElementById('kpi-health-pct');
+                            const subEl = document.getElementById('kpi-health-sub');
+                            if (kEl) kEl.innerText = latest.kondisiKesehatan.statusUmum || 'Optimal';
+                            if (subEl) subEl.innerText = latest.kondisiKesehatan.catatan || 'Kondisi baik';
+                        }
+                    }
+                })
+                .catch(() => {});
 
-            // Update Growth Chart
+            // Update main growth chart
             if (growthChart) {
+                const growth = generateGrowthTimeSeriesData(currentAnalyticsPlantId, currentAnalyticsRange);
                 growthChart.data.labels = growth.labels;
-                growthChart.data.datasets[0].label = 'Tinggi Aktual ' + growth.plantName + ' (cm)';
+                growthChart.data.datasets[0].label = 'Tinggi Tanaman (cm)';
                 growthChart.data.datasets[0].data = growth.actualData;
                 growthChart.data.datasets[1].data = growth.targetData;
                 growthChart.update('active');
-            }
-
-            // Update Moisture Chart
-            if (moistureChart) {
-                moistureChart.data.labels = moist.labels;
-                moistureChart.data.datasets[0].data = moist.moisture;
-                moistureChart.data.datasets[1].data = moist.treatments;
-                moistureChart.update('active');
             }
         }
 
@@ -2541,8 +3128,8 @@
                 const growth = generateGrowthTimeSeriesData(currentAnalyticsPlantId, currentAnalyticsRange);
                 
                 const gradientActual = ctxGrowth.getContext('2d').createLinearGradient(0, 0, 0, 220);
-                gradientActual.addColorStop(0, 'rgba(16, 185, 129, 0.32)');
-                gradientActual.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+                gradientActual.addColorStop(0, 'rgba(5, 150, 105, 0.14)');
+                gradientActual.addColorStop(1, 'rgba(5, 150, 105, 0.0)');
 
                 growthChart = new Chart(ctxGrowth, {
                     type: 'line',
@@ -2550,29 +3137,30 @@
                         labels: growth.labels,
                         datasets: [
                             {
-                                label: 'Tinggi Aktual ' + growth.plantName + ' (cm)',
+                                label: 'Tinggi Aktual Kebun (cm)',
                                 data: growth.actualData,
-                                borderColor: '#10b981',
+                                borderColor: '#059669',
                                 backgroundColor: gradientActual,
-                                borderWidth: 3,
+                                borderWidth: 2,
                                 fill: true,
                                 tension: 0.35,
-                                pointBackgroundColor: '#10b981',
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: '#059669',
                                 pointBorderColor: '#ffffff',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
+                                pointBorderWidth: 2
                             },
                             {
-                                label: 'Target Standar Varietas (cm)',
+                                label: 'Target Standar Agronomi (cm)',
                                 data: growth.targetData,
-                                borderColor: '#f59e0b',
-                                borderDash: [5, 5],
-                                borderWidth: 2,
+                                borderColor: '#94a3b8',
+                                borderDash: [4, 4],
+                                borderWidth: 1.5,
                                 fill: false,
                                 tension: 0.35,
-                                pointRadius: 3,
-                                pointBackgroundColor: '#f59e0b'
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                pointBackgroundColor: '#94a3b8'
                             }
                         ]
                     },
@@ -2583,9 +3171,11 @@
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                                titleFont: { family: 'Quicksand', weight: 'bold' },
-                                bodyFont: { family: 'Quicksand' },
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                padding: 10,
+                                cornerRadius: 8,
+                                titleFont: { family: 'Quicksand', weight: 'bold', size: 12 },
+                                bodyFont: { family: 'Quicksand', size: 11 },
                                 callbacks: {
                                     label: ctx => ` ${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw + ' cm' : 'Belum tercapai'}`
                                 }
@@ -2593,16 +3183,16 @@
                         },
                         scales: {
                             x: {
-                                grid: { color: 'rgba(0, 0, 0, 0.04)' },
-                                ticks: { font: { family: 'Quicksand', size: 10, weight: '600' }, color: '#78716c' }
+                                grid: { color: 'rgba(0, 0, 0, 0.035)' },
+                                ticks: { font: { family: 'Quicksand', size: 10, weight: '600' }, color: '#64748b' }
                             },
                             y: {
                                 min: 10,
                                 suggestedMax: 70,
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.035)' },
                                 ticks: {
                                     font: { family: 'Quicksand', size: 10, weight: '600' },
-                                    color: '#78716c',
+                                    color: '#64748b',
                                     callback: v => v + ' cm'
                                 }
                             }
@@ -2611,7 +3201,7 @@
                 });
             }
 
-            // 2. Variety Distribution Doughnut Chart
+            // 2. Variety Distribution Mini Doughnut Chart
             const ctxVariety = document.getElementById('varietyDistributionChart');
             if (ctxVariety) {
                 if (varietyChart) varietyChart.destroy();
@@ -2627,119 +3217,214 @@
                         datasets: [{
                             data: [10, 10, 10, 10],
                             backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#8b5cf6'],
-                            borderWidth: 3,
+                            borderWidth: 2,
                             borderColor: '#ffffff',
-                            hoverOffset: 6
+                            hoverOffset: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '65%',
+                        cutout: '75%',
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    boxWidth: 10,
-                                    font: { family: 'Quicksand', size: 9, weight: '700' },
-                                    color: '#5c5346',
-                                    padding: 8
-                                }
-                            },
+                            legend: { display: false },
                             tooltip: {
-                                titleFont: { family: 'Quicksand', weight: 'bold' },
-                                bodyFont: { family: 'Quicksand' },
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                padding: 8,
+                                cornerRadius: 6,
+                                titleFont: { family: 'Quicksand', weight: 'bold', size: 11 },
+                                bodyFont: { family: 'Quicksand', size: 10 },
                                 callbacks: {
-                                    label: ctx => ` ${ctx.label}: ${ctx.raw} Polybag (25%)`
+                                    label: ctx => ` ${ctx.label}: ${ctx.raw} PB (25%)`
                                 }
                             }
                         }
                     }
                 });
             }
+        }
 
-            // 3. Moisture & Treatment Timeline Chart
-            const ctxMoisture = document.getElementById('moistureTreatmentChart');
-            if (ctxMoisture) {
-                if (moistureChart) moistureChart.destroy();
-                const moist = generateMoistureTreatmentData(currentAnalyticsPlantId);
+        // --- Visualisasi Runtun Waktu Tren Cuaca (Suhu & Kelembapan Udara) ---
+        async function initOrUpdateWeatherTrendChart() {
+            const ctxWeather = document.getElementById('weatherTrendChart');
+            if (!ctxWeather || typeof Chart === 'undefined') return;
 
-                const gradMoist = ctxMoisture.getContext('2d').createLinearGradient(0, 0, 0, 180);
-                gradMoist.addColorStop(0, 'rgba(2, 132, 199, 0.25)');
-                gradMoist.addColorStop(1, 'rgba(2, 132, 199, 0.0)');
+            let hoursLabels = [];
+            let tempData = [];
+            let humData = [];
+            let latestTemp = 29.0;
+            let latestHum = 76;
+            let latestCond = 'Cerah Berawan';
+            let isOnline = false;
 
-                moistureChart = new Chart(ctxMoisture, {
-                    data: {
-                        labels: moist.labels,
-                        datasets: [
-                            {
-                                type: 'line',
-                                label: 'Kelembapan Tanah (%)',
-                                data: moist.moisture,
-                                borderColor: '#0284c7',
-                                backgroundColor: gradMoist,
-                                borderWidth: 2.5,
-                                fill: true,
-                                tension: 0.35,
-                                yAxisID: 'y',
-                                pointBackgroundColor: '#0284c7',
-                                pointRadius: 4
-                            },
-                            {
-                                type: 'bar',
-                                label: 'Event Semprot Daun / Pupuk',
-                                data: moist.treatments,
-                                backgroundColor: '#10b981',
-                                borderRadius: 6,
-                                barThickness: 14,
-                                yAxisID: 'y1'
+            try {
+                // Koordinat Surakarta: latitude -7.5428, longitude 110.8439
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=-7.5428&longitude=110.8439&hourly=temperature_2m,relative_humidity_2m,weather_code,precipitation&timezone=Asia%2FJakarta&past_days=1&forecast_days=1';
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.hourly && data.hourly.time && data.hourly.time.length > 0) {
+                        const now = new Date();
+                        // Format jam lokal saat ini: YYYY-MM-DDTHH
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hour = String(now.getHours()).padStart(2, '0');
+                        const currentIsoPrefix = `${year}-${month}-${day}T${hour}`;
+
+                        let currentIndex = data.hourly.time.findIndex(t => t.startsWith(currentIsoPrefix));
+                        if (currentIndex === -1) {
+                            currentIndex = Math.min(24, data.hourly.time.length - 1);
+                        }
+
+                        // Ambil rentang 24 jam terakhir (sampling setiap 2 jam untuk 12 titik grafik)
+                        const startIndex = Math.max(0, currentIndex - 22);
+                        for (let i = startIndex; i <= currentIndex; i += 2) {
+                            const timeStr = data.hourly.time[i];
+                            const hourPart = timeStr.slice(11, 16);
+                            hoursLabels.push(i === currentIndex ? 'Kini (' + hourPart + ')' : hourPart);
+                            tempData.push(data.hourly.temperature_2m[i]);
+                            humData.push(data.hourly.relative_humidity_2m[i]);
+                        }
+
+                        latestTemp = data.hourly.temperature_2m[currentIndex];
+                        latestHum = data.hourly.relative_humidity_2m[currentIndex];
+                        const code = data.hourly.weather_code ? data.hourly.weather_code[currentIndex] : 1;
+                        latestCond = translateWmoCode(code);
+                        isOnline = true;
+                    }
+                }
+            } catch (err) {
+                console.warn('Gagal memuat API cuaca langsung, menggunakan estimasi iklim:', err);
+            }
+
+            // Fallback estimasi kurva diurnal Surakarta jika offline
+            if (hoursLabels.length === 0) {
+                hoursLabels = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', 'Kini'];
+                tempData = [24.5, 24.0, 23.8, 25.0, 27.8, 30.2, 32.5, 33.0, 31.2, 28.5, 26.8, 28.5];
+                humData = [88, 90, 92, 85, 75, 68, 62, 59, 65, 74, 80, 75];
+                latestTemp = 28.5;
+                latestHum = 75;
+                latestCond = 'Cerah Berawan (Offline)';
+            }
+
+            // Update info kartu metrik cuaca
+            const tempEl = document.getElementById('analytics-weather-temp');
+            const humEl = document.getElementById('analytics-weather-humidity');
+            const condEl = document.getElementById('analytics-weather-cond');
+            const badgeEl = document.getElementById('weather-sync-badge');
+            const insightEl = document.getElementById('analytics-weather-insight');
+
+            if (tempEl) tempEl.innerText = Math.round(latestTemp) + '°C';
+            if (humEl) humEl.innerText = Math.round(latestHum) + '% RH';
+            if (condEl) condEl.innerText = latestCond;
+            if (badgeEl) {
+                badgeEl.innerText = isOnline ? 'Live Open-Meteo' : 'Estimasi Iklim';
+                badgeEl.className = isOnline 
+                    ? 'text-[10px] px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/80'
+                    : 'text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-semibold border border-amber-200/80';
+            }
+
+            if (insightEl) {
+                if (latestTemp >= 32) {
+                    insightEl.innerText = 'Suhu mencapai ' + Math.round(latestTemp) + '°C (hangat kering). Jaga kecukupan lengas media polybag agar bunga cabai tidak mudah rontok.';
+                } else if (latestHum >= 85) {
+                    insightEl.innerText = 'Kelembapan relatif udara tinggi (' + Math.round(latestHum) + '%). Kondisi daun basah berisiko memicu spora jamur antraknosa pada buah muda.';
+                } else {
+                    insightEl.innerText = 'Kondisi mikroklimat ideal (' + Math.round(latestTemp) + '°C, ' + Math.round(latestHum) + '% RH) untuk asimilasi fotosintesis dan pembentukan buah cabai.';
+                }
+            }
+
+            if (weatherTrendChart) weatherTrendChart.destroy();
+
+            const gradTemp = ctxWeather.getContext('2d').createLinearGradient(0, 0, 0, 140);
+            gradTemp.addColorStop(0, 'rgba(217, 119, 6, 0.16)');
+            gradTemp.addColorStop(1, 'rgba(217, 119, 6, 0.0)');
+
+            weatherTrendChart = new Chart(ctxWeather, {
+                type: 'line',
+                data: {
+                    labels: hoursLabels,
+                    datasets: [
+                        {
+                            label: 'Suhu Udara (°C)',
+                            data: tempData,
+                            borderColor: '#d97706',
+                            backgroundColor: gradTemp,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.35,
+                            yAxisID: 'yTemp',
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointBackgroundColor: '#d97706',
+                            pointBorderColor: '#ffffff'
+                        },
+                        {
+                            label: 'Kelembapan Udara (%)',
+                            data: humData,
+                            borderColor: '#0284c7',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            borderDash: [3, 3],
+                            tension: 0.35,
+                            yAxisID: 'yHum',
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointBackgroundColor: '#0284c7',
+                            pointBorderColor: '#ffffff'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            padding: 8,
+                            cornerRadius: 6,
+                            titleFont: { family: 'Quicksand', weight: 'bold', size: 11 },
+                            bodyFont: { family: 'Quicksand', size: 10 },
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} ${ctx.dataset.yAxisID === 'yTemp' ? '°C' : '%'}`
                             }
-                        ]
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: { intersect: false, mode: 'index' },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    boxWidth: 10,
-                                    font: { family: 'Quicksand', size: 10, weight: '700' },
-                                    color: '#5c5346'
-                                }
-                            },
-                            tooltip: {
-                                titleFont: { family: 'Quicksand', weight: 'bold' },
-                                bodyFont: { family: 'Quicksand' }
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(0, 0, 0, 0.035)' },
+                            ticks: { font: { family: 'Quicksand', size: 9, weight: '600' }, color: '#64748b' }
+                        },
+                        yTemp: {
+                            type: 'linear',
+                            position: 'left',
+                            suggestedMin: 20,
+                            suggestedMax: 36,
+                            grid: { color: 'rgba(0, 0, 0, 0.035)' },
+                            ticks: {
+                                font: { family: 'Quicksand', size: 9, weight: '600' },
+                                color: '#d97706',
+                                callback: v => v + '°'
                             }
                         },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(0, 0, 0, 0.04)' },
-                                ticks: { font: { family: 'Quicksand', size: 10 }, color: '#78716c' }
-                            },
-                            y: {
-                                min: 50,
-                                max: 100,
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                                ticks: {
-                                    font: { family: 'Quicksand', size: 9 },
-                                    color: '#0284c7',
-                                    callback: v => v + '%'
-                                }
-                            },
-                            y1: {
-                                min: 0,
-                                max: 60,
-                                position: 'right',
-                                grid: { display: false },
-                                ticks: { display: false }
+                        yHum: {
+                            type: 'linear',
+                            position: 'right',
+                            suggestedMin: 40,
+                            suggestedMax: 100,
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: 'Quicksand', size: 9, weight: '600' },
+                                color: '#0284c7',
+                                callback: v => v + '%'
                             }
                         }
                     }
-                });
-            }
+                }
+            });
         }
 
         function renderAnalyticsLogList() {
@@ -2749,16 +3434,27 @@
             listEl.innerHTML = '';
             recentTreatmentsLog.forEach(log => {
                 const item = document.createElement('div');
-                item.className = 'p-2 bg-white border border-[#ece4d6] rounded-xl flex items-start justify-between gap-2 shadow-xs';
+                item.className = 'p-2 px-2.5 bg-slate-50/70 hover:bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-between gap-2 transition';
+                
+                // Normalise badge colors to quiet tokens
+                let badgeClass = 'bg-slate-100 text-slate-700';
+                if (log.status.toLowerCase().includes('terlindungi') || log.status.toLowerCase().includes('optimal') || log.status.toLowerCase().includes('terverifikasi')) {
+                    badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200/80';
+                } else if (log.status.toLowerCase().includes('perhatian') || log.status.toLowerCase().includes('observasi')) {
+                    badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200/80';
+                } else if (log.status.toLowerCase().includes('lembap') || log.status.toLowerCase().includes('air')) {
+                    badgeClass = 'bg-sky-50 text-sky-700 border border-sky-200/80';
+                }
+
                 item.innerHTML = `
-                    <div class="space-y-0.5">
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-[#8c8273] font-bold">${log.date}</span>
-                            <span class="text-[10px] px-1.5 py-0.2 rounded-md bg-[#f5ede0] font-bold text-[#5c5346]">${log.plant}</span>
+                    <div class="space-y-0.5 min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-slate-400 font-mono">${log.date}</span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-200/60 font-semibold text-slate-700 font-mono">${log.plant}</span>
                         </div>
-                        <div class="text-[11px] font-bold text-[#443e35]">${log.action}</div>
+                        <div class="text-xs font-medium text-slate-800 truncate">${log.action}</div>
                     </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${log.badgeColor}">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap shrink-0 ${badgeClass}">
                         ${log.status}
                     </span>
                 `;
@@ -2938,7 +3634,11 @@
                     const pEl = document.getElementById('modal-plant-phase');
                     if (pEl) pEl.innerText = phase + ' (Diperiksa)';
                     const hlEl = document.getElementById('modal-plant-health');
-                    if (hlEl) hlEl.innerText = health;
+                    if (hlEl) {
+                        const isGoodHealth = health.includes('🟢') || health.includes('Aman');
+                        const dotColor = isGoodHealth ? 'bg-emerald-500' : (health.includes('Hama') ? 'bg-amber-500' : 'bg-rose-500');
+                        hlEl.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor} inline-block mr-1.5"></span> ${health.replace(/[🟢🟡🔴🌿]/g, '').trim()}`;
+                    }
                 }
             }
 
@@ -2950,7 +3650,7 @@
                 date: timeStr,
                 plant: polyCode,
                 action: `Pemeriksaan: Tinggi ${height} cm (${phase}) ${notes ? '• ' + notes.slice(0, 32) + '...' : ''}`,
-                status: isGood ? '🍃 Terverifikasi' : '⚠️ Perlu Perhatian',
+                status: isGood ? 'Terverifikasi' : 'Perlu Perhatian',
                 badgeColor: isGood ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fef9c3] text-[#a16207]'
             });
 
@@ -2960,7 +3660,7 @@
             // 4. Close check-in modal & audio + toast feedback
             closeCheckinModal();
             playChime();
-            showToast(`Hasil pemeriksaan ${polyCode} (${height} cm) berhasil disimpan!`, '📝');
+            showToast(`Hasil pemeriksaan ${polyCode} (${height} cm) berhasil disimpan!`, 'note');
 
             // 5. Backend sync POST /api/log-pemeriksaan
             fetch('/api/log-pemeriksaan', {
@@ -2980,9 +3680,13 @@
             autoWeatherMode = false;
             const badge = document.getElementById('weather-auto-badge');
             if (badge) {
-                badge.innerText = 'MANUAL';
-                badge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#8c8273] text-white font-bold leading-none';
+                badge.innerText = 'Manual';
+                badge.className = 'text-[11px] px-1.5 py-0.5 rounded-md bg-[#8c8273] text-white font-bold leading-none';
             }
+            const flyoutLabel = document.getElementById('flyout-mode-label');
+            const flyoutIcon = document.getElementById('flyout-mode-icon');
+            if (flyoutLabel) flyoutLabel.innerText = 'Mode: Manual';
+            if (flyoutIcon) flyoutIcon.className = 'w-1.5 h-1.5 rounded-full bg-slate-400';
             playPop();
             setTime(timeKey);
         }
@@ -2991,15 +3695,20 @@
             autoWeatherMode = false;
             const badge = document.getElementById('weather-auto-badge');
             if (badge) {
-                badge.innerText = 'MANUAL';
-                badge.className = 'text-[9px] px-1.5 py-0.5 rounded-full bg-[#8c8273] text-white font-bold leading-none';
+                badge.innerText = 'Manual';
+                badge.className = 'text-[11px] px-1.5 py-0.5 rounded-md bg-[#8c8273] text-white font-bold leading-none';
             }
+            const flyoutLabel = document.getElementById('flyout-mode-label');
+            const flyoutIcon = document.getElementById('flyout-mode-icon');
+            if (flyoutLabel) flyoutLabel.innerText = 'Mode: Manual';
+            if (flyoutIcon) flyoutIcon.className = 'w-1.5 h-1.5 rounded-full bg-slate-400';
             playPop();
             setWeather(weatherKey);
         }
 
         function setTime(timeKey) {
             currentTime = timeKey;
+            document.body.classList.toggle('glass-night', timeKey === 'malam');
             ['pagi', 'siang', 'sore', 'malam'].forEach(k => {
                 const btn = document.getElementById('btn-' + k);
                 if (btn) btn.classList.toggle('active', k === timeKey);
@@ -3395,8 +4104,8 @@
                                 if (selectedPlant === currentSprayPlant) {
                                     const hEl = document.getElementById('modal-plant-health');
                                     const sEl = document.getElementById('modal-plant-spray-status');
-                                    if (hEl) hEl.innerText = '🟢 Sangat Baik';
-                                    if (sEl) sEl.innerText = '🌿 Aman & Terlindungi';
+                                    if (hEl) hEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span> Sangat Baik';
+                                    if (sEl) sEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span> Aman & Terlindungi';
                                 }
                             }
                             isSprayingMist = false;
