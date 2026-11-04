@@ -1,0 +1,3 @@
+# 2. UI Layout Overhaul: Grounded Navigation Sidebar and Objective Weather HUD
+
+Replaced the floating widget dock and collapsible weather flyout with a full-height grounded navigation sidebar and a persistent, objective weather HUD. The previous floating dock felt fragmented and ungrounded, while the weather dropdown hid essential environmental context behind a click and cluttered the UI with synthetic advisory text. We decided to display microclimate telemetry (temperature, humidity, wind, and live status) prominently as pure objective metrics without gimmicks or dropdown toggles, and restructure the sidebar into an ergonomic, full-height command panel on the left to anchor the 3D garden diorama.
