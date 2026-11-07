@@ -23,7 +23,7 @@
          */
         :root {
             --font-family-base: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --color-bg-sky: #87CEEB;
+            --color-bg-sky: #f7f9f7;
 
             /* Ink: teks di atas kaca, gelap agar kontras di siang dan malam */
             --ink: #1f2a24;
@@ -89,9 +89,36 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow-x: clip;
+            overflow-x: hidden;
             overflow-y: hidden;
-            background-color: var(--color-bg-sky);
+            background-color: #f7f9f7;
+        }
+        /* Anti-slop: scrollbar kustom halus di semua container, cegah bar biru bawaan browser */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(31, 42, 36, 0.22) transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(31, 42, 36, 0.22);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(31, 42, 36, 0.45);
+        }
+        /* Cegah highlight / focus outline biru default Chromium */
+        button:focus, a:focus, input:focus, select:focus, textarea:focus {
+            outline: none;
+        }
+        :focus-visible {
+            outline: 2px solid #1e7247 !important;
+            outline-offset: 2px;
         }
         [hidden] {
             display: none !important;
@@ -723,10 +750,7 @@
                 <span id="spray-btn-badge" class="hidden text-[11px] px-1.5 py-0.5 rounded bg-[color:var(--accent-strong)] text-white font-semibold tabular-nums leading-none">0/40</span>
                 <kbd>E</kbd>
             </button>
-            <button id="btn-analytics" onclick="openAnalyticsModal()" class="dock-btn" title="Buka panel analitik dan riwayat tanaman">
-                <svg class="w-4 h-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
-                <span>Analitik tanaman</span>
-            </button>
+
         </div>
 
         <div class="dock-foot">
@@ -758,7 +782,7 @@
             </div>
 
             <!-- Metrik Suhu & Kelembapan berdampingan secara proporsional tanpa box/tile bersarang -->
-            <div class="flex items-baseline justify-between py-4 border-b border-[color:var(--tile-edge)]">
+            <div class="flex items-baseline justify-between pt-3.5 pb-0.5">
                 <div>
                     <span class="text-xs t-muted block">Suhu udara</span>
                     <span id="weather-temp" class="text-4xl font-light tracking-tight tabular-nums t-ink mt-1 block">--&deg;C</span>
@@ -769,16 +793,11 @@
                 </div>
             </div>
 
-            <!-- Mode Telemetri: Hanya Mode Otomatis (Glass Liquid Pill) -->
-            <div class="pt-3 flex items-center justify-start text-xs">
-                <button onclick="toggleAutoWeather()" id="flyout-mode-btn" class="t-muted hover:t-ink transition-all cursor-pointer flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/40 hover:bg-white/60 border border-white/60 shadow-xs focus:outline-none focus:ring-1 focus:ring-emerald-700/40">
-                    <span id="flyout-mode-icon" class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span id="flyout-mode-label" class="font-medium text-[11px] tracking-wide">Mode otomatis</span>
-                </button>
-            </div>
-
             <!-- Hidden compatibility anchors for JS -->
             <div class="hidden">
+                <button id="flyout-mode-btn"></button>
+                <span id="flyout-mode-icon"></span>
+                <span id="flyout-mode-label"></span>
                 <strong id="weather-desc"></strong>
                 <strong id="weather-rain-val"></strong>
                 <span id="weather-status-badge"></span>
@@ -1180,6 +1199,7 @@
         let scene, camera, renderer;
         let ambientLight, sunLight, porchLight, warungLight, windowGlowMesh, windowGlowLight;
         let rainSystem, sunbeamsGroup, cloudsGroup, starsGroup, firefliesGroup;
+        let treeCanopies = [];
 
         let currentTime = 'siang';
         let currentWeather = 'cerah';
@@ -1345,6 +1365,50 @@
             });
         }
 
+        function createSoilTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#9c7248';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 420; i++) {
+                const light = Math.random() > 0.52;
+                ctx.fillStyle = light ? 'rgba(225, 190, 130, 0.20)' : 'rgba(75, 48, 27, 0.16)';
+                const size = 1 + Math.random() * 3;
+                ctx.beginPath();
+                ctx.ellipse(Math.random() * 128, Math.random() * 128, size * 1.4, size * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.encoding = THREE.sRGBEncoding;
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(3, 2);
+            return texture;
+        }
+
+        function createRoofTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#9e563b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < canvas.height; y += 16) {
+                ctx.fillStyle = 'rgba(73, 35, 26, 0.30)';
+                ctx.fillRect(0, y, canvas.width, 2);
+                for (let x = (y / 16 % 2) * 16 - 16; x < canvas.width; x += 32) {
+                    ctx.fillStyle = 'rgba(247, 188, 136, 0.18)';
+                    ctx.fillRect(x, y + 3, 2, 12);
+                }
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.encoding = THREE.sRGBEncoding;
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 4);
+            return texture;
+        }
+
         function init() {
             const container = document.getElementById('canvas-container');
 
@@ -1394,6 +1458,7 @@
             scene.add(windowGlowLight);
 
             buildIslandBase();
+            buildIslandVegetation();
             buildHouse();
             buildWarung();
             buildDrivewayAndFence();
@@ -1458,25 +1523,30 @@
             const baseGroup = new THREE.Group();
             walkableGround = [];
 
-            const soilGeo = new THREE.CylinderGeometry(26, 23, 3.5, 48);
-            const soilMat = createToonMaterial(0x9c7248, 0.95);
+            // Alas maket berbentuk kotak supaya batas area terbaca jelas dari sudut 3/4.
+            const soilGeo = new THREE.BoxGeometry(29, 3.5, 31.5);
+            const soilMat = createToonMaterial(0xffffff, 0.95);
+            soilMat.map = createSoilTexture();
+            soilMat.color.setHex(0xffffff);
             const soil = new THREE.Mesh(soilGeo, soilMat);
-            soil.position.y = -1.8;
+            soil.position.set(-4.5, -1.8, -1.25);
             soil.receiveShadow = true;
             baseGroup.add(soil);
 
             // Rumput dasar pulau diturunkan sedikit (permukaan di y = -0.03)
-            const grassGeo = new THREE.CylinderGeometry(26.3, 26, 0.7, 48);
+            // Sedikit inset dari soil untuk memberi bibir tanah dan mencegah z-fighting di sisi alas.
+            const grassGeo = new THREE.BoxGeometry(28.6, 0.7, 31.1);
             const grassMat = createToonMaterial(0x88c458, 0.9);
+            grassMat.side = THREE.DoubleSide;
             const grass = new THREE.Mesh(grassGeo, grassMat);
-            grass.position.y = -0.38;
+            grass.position.set(-4.5, -0.34, -1.25);
             grass.receiveShadow = true;
             baseGroup.add(grass);
 
             // Dataran Rumput Atas (Upper Terrace) untuk Rumah & Halaman Depan (Tinggi y = 0.36)
-            const upperGrassGeo = new THREE.BoxGeometry(20.5, 0.40, 22.5);
+            const upperGrassGeo = new THREE.BoxGeometry(14.5, 0.40, 22.5);
             const upperGrass = new THREE.Mesh(upperGrassGeo, grassMat);
-            upperGrass.position.set(4.5, 0.16, -2.5);
+            upperGrass.position.set(2.5, 0.16, -2.5);
             upperGrass.receiveShadow = true;
             baseGroup.add(upperGrass);
 
@@ -1520,24 +1590,93 @@
                 walkableGround.push(step);
             });
 
-            // Lahan Kanan
-            const openLotRightGeo = new THREE.BoxGeometry(8.5, 0.16, 21);
-            const openLotRight = new THREE.Mesh(openLotRightGeo, createToonMaterial(0xbfa77a, 0.95));
-            openLotRight.position.set(11.5, 0.31, -2.0);
-            openLotRight.receiveShadow = true;
-            baseGroup.add(openLotRight);
-
             // Jalan Raya Depan
-            const roadGeo = new THREE.BoxGeometry(34, 0.16, 4.6);
+            const roadGeo = new THREE.BoxGeometry(29, 0.16, 4.6);
             const roadMat = createToonMaterial(0x6a6d72, 0.9);
             const road = new THREE.Mesh(roadGeo, roadMat);
-            road.position.set(0, 0.32, 12.2);
+            road.position.set(-4.5, 0.32, 12.2);
             road.receiveShadow = true;
             baseGroup.add(road);
 
-            walkableGround.push(soil, grass, upperGrass, lowerLot, openLotRight, road);
+            // Marka tengah putih putus-putus mengikuti arah panjang jalan.
+            const roadMarkMat = createToonMaterial(0xf7f4dc, 0.9);
+            for (let x = -17.1; x <= 8.0; x += 3.8) {
+                const mark = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.035, 0.12), roadMarkMat);
+                mark.position.set(x, 0.415, 12.2);
+                baseGroup.add(mark);
+            }
+
+            walkableGround.push(soil, grass, upperGrass, lowerLot, road);
 
             scene.add(baseGroup);
+        }
+
+        function buildIslandVegetation() {
+            treeCanopies = [];
+            const vegetation = new THREE.Group();
+            const trunkMat = createToonMaterial(0x765034, 0.95);
+            const leafMats = [
+                createToonMaterial(0x477d3b, 0.92),
+                createToonMaterial(0x5b9145, 0.92),
+                createToonMaterial(0x719e50, 0.92)
+            ];
+            const shrubMats = [leafMats[0], leafMats[1]];
+            const trunkGeo = new THREE.CylinderGeometry(0.22, 0.34, 2.15, 7);
+            const crownGeo = new THREE.SphereGeometry(1, 8, 7);
+            const shrubGeo = new THREE.SphereGeometry(0.62, 7, 6);
+
+            // Perimeter positions frame the miniature while leaving crops, buildings, and paths visible.
+            const trees = [
+                { x: -15.1, z: -11.2, s: 1.05 },
+                { x: -12.7, z: -14.4, s: 0.82 },
+                { x: -15.5, z: 7.4, s: 0.9 }
+            ];
+
+            trees.forEach((tree, index) => {
+                const treeGroup = new THREE.Group();
+                treeGroup.position.set(tree.x, 0.03, tree.z);
+                treeGroup.scale.setScalar(tree.s);
+
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = 1.08;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+
+                const canopy = new THREE.Group();
+                canopy.position.y = 2.35;
+                const crown = new THREE.Mesh(crownGeo, leafMats[index % leafMats.length]);
+                crown.scale.set(1.15, 1.08, 1.05);
+                crown.castShadow = true;
+                canopy.add(crown);
+                [
+                    [-0.62, -0.08, 0.12, 0.7],
+                    [0.58, -0.12, -0.16, 0.76],
+                    [0.05, 0.48, 0.18, 0.68]
+                ].forEach(([x, y, z, scale], puffIndex) => {
+                    const puff = new THREE.Mesh(crownGeo, leafMats[(index + puffIndex + 1) % leafMats.length]);
+                    puff.position.set(x, y, z);
+                    puff.scale.setScalar(scale);
+                    puff.castShadow = true;
+                    canopy.add(puff);
+                });
+                treeGroup.add(canopy);
+                vegetation.add(treeGroup);
+                treeCanopies.push({ canopy, phase: index * 0.9 });
+            });
+
+            const shrubs = [
+                [-15.9, -3.5], [-14.7, -1.9], [-15.3, 0.1],
+                [-11.8, 7.1]
+            ];
+            shrubs.forEach(([x, z], index) => {
+                const shrub = new THREE.Mesh(shrubGeo, shrubMats[index % shrubMats.length]);
+                shrub.position.set(x, 0.45, z);
+                shrub.scale.set(1.35, 0.82, 1);
+                shrub.castShadow = true;
+                vegetation.add(shrub);
+            });
+
+            scene.add(vegetation);
         }
 
         function buildChiliPolybags() {
@@ -1824,19 +1963,52 @@
             doorInside.position.set(1.35, 1.45, 2.02);
             houseGroup.add(doorInside);
 
-            const roofGeo = new THREE.ConeGeometry(6.5, 2.9, 4);
-            const roofMat = createToonMaterial(0x9e563b, 0.85);
-            const roof = new THREE.Mesh(roofGeo, roofMat);
-            roof.position.set(0, 5.2, -0.5);
-            roof.rotation.y = Math.PI / 4;
-            roof.scale.set(1.06, 1, 0.86);
-            roof.castShadow = true;
-            roof.receiveShadow = true;
-            houseGroup.add(roof);
+            const roofMat = createToonMaterial(0xffffff, 0.88);
+            roofMat.map = createRoofTexture();
+            roofMat.color.setHex(0xffffff);
+            const roofHalfWidth = 4.55;
+            const roofRise = 1.8;
+            const roofSlopeAngle = Math.atan(roofRise / roofHalfWidth);
+            const roofSlabLength = Math.hypot(roofHalfWidth, roofRise);
+            const roofSlabGeo = new THREE.BoxGeometry(roofSlabLength, 0.22, 6.6);
+            const roofEaveY = 3.82;
+            const roofCenterY = roofEaveY + roofRise / 2;
 
-            const ridgeGeo = new THREE.BoxGeometry(2.5, 0.26, 0.42);
+            const leftRoof = new THREE.Mesh(roofSlabGeo, roofMat);
+            leftRoof.position.set(-roofHalfWidth / 2, roofCenterY, -0.5);
+            leftRoof.rotation.z = roofSlopeAngle;
+            leftRoof.castShadow = true;
+            leftRoof.receiveShadow = true;
+
+            const rightRoof = new THREE.Mesh(roofSlabGeo, roofMat);
+            rightRoof.position.set(roofHalfWidth / 2, roofCenterY, -0.5);
+            rightRoof.rotation.z = -roofSlopeAngle;
+            rightRoof.castShadow = true;
+            rightRoof.receiveShadow = true;
+            houseGroup.add(leftRoof, rightRoof);
+
+            const gableShape = new THREE.Shape();
+            gableShape.moveTo(-4.25, 0);
+            gableShape.lineTo(4.25, 0);
+            gableShape.lineTo(0, roofRise);
+            gableShape.closePath();
+            const gableGeo = new THREE.ExtrudeGeometry(gableShape, {
+                depth: 0.14,
+                bevelEnabled: false
+            });
+            const frontGable = new THREE.Mesh(gableGeo, whiteWallMat);
+            frontGable.position.set(0, roofEaveY, 2.75);
+            frontGable.castShadow = true;
+            const backGable = new THREE.Mesh(gableGeo, whiteWallMat);
+            backGable.position.set(0, roofEaveY, -3.75);
+            backGable.rotation.y = Math.PI;
+            backGable.castShadow = true;
+            houseGroup.add(frontGable, backGable);
+
+            const ridgeGeo = new THREE.BoxGeometry(0.42, 0.25, 6.72);
             const ridge = new THREE.Mesh(ridgeGeo, createToonMaterial(0x82442c, 0.9));
-            ridge.position.set(0, 6.55, -0.5);
+            ridge.position.set(0, roofEaveY + roofRise, -0.5);
+            ridge.castShadow = true;
             houseGroup.add(ridge);
 
             scene.add(houseGroup);
@@ -1872,10 +2044,6 @@
             const redTable = new THREE.Mesh(tableGeo, redTableMat);
             redTable.position.set(-1.0, 0.55, 1.6);
             warungGroup.add(redTable);
-
-            const pinkBox = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.8), createToonMaterial(0xe07a9b, 0.7));
-            pinkBox.position.set(1.6, 0.5, 2.1);
-            warungGroup.add(pinkBox);
 
             const gableShape = new THREE.Shape();
             gableShape.moveTo(-2.8, 0);
@@ -1962,13 +2130,14 @@
             warungGroup.add(yellowAccent);
 
             const benchTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.09, 0.45), poleMat);
-            benchTop.position.set(0.5, 0.55, 3.95);
+            benchTop.position.set(-1.2, 0.62, 3.5);
             benchTop.castShadow = true;
             warungGroup.add(benchTop);
 
-            [-0.3, 1.3].forEach(bx => {
+            [-2.0, -0.4].forEach(bx => {
                 const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.55, 0.4), poleMat);
-                leg.position.set(bx, 0.28, 3.95);
+                leg.position.set(bx, 0.30, 3.5);
+                leg.castShadow = true;
                 warungGroup.add(leg);
             });
 
@@ -1996,6 +2165,13 @@
             driveway.receiveShadow = true;
             propGroup.add(driveway);
             walkableGround.push(driveway);
+
+            // Pelataran depan warung menyambung ke cor samping dengan material yang sama.
+            const warungApron = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.14, 5.8), drivewayMat);
+            warungApron.position.set(6.0, 0.39, 6.5);
+            warungApron.receiveShadow = true;
+            propGroup.add(warungApron);
+            walkableGround.push(warungApron);
 
             const fenceWoodMat = createToonMaterial(0x9e8260, 0.9);
 
@@ -3252,7 +3428,7 @@
                 plant: 'Lahan Samping Rendah',
                 action: 'Inspeksi kelembapan media tanam & pembersihan gulma',
                 status: 'Lembap 74%',
-                badgeColor: 'bg-[#e0f2fe] text-[#0369a1]'
+                badgeColor: 'bg-emerald-50 text-emerald-800'
             },
             {
                 date: '15 Okt, 09:00',
@@ -3685,7 +3861,7 @@
                         {
                             label: 'Kelembapan Udara (%)',
                             data: humData,
-                            borderColor: '#0284c7',
+                            borderColor: '#059669',
                             backgroundColor: 'transparent',
                             borderWidth: 1.5,
                             borderDash: [3, 3],
@@ -3693,7 +3869,7 @@
                             yAxisID: 'yHum',
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            pointBackgroundColor: '#0284c7',
+                            pointBackgroundColor: '#059669',
                             pointBorderColor: '#ffffff'
                         }
                     ]
@@ -3740,7 +3916,7 @@
                             grid: { display: false },
                             ticks: {
                                 font: { family: 'Quicksand', size: 9, weight: '600' },
-                                color: '#0284c7',
+                                color: '#059669',
                                 callback: v => v + '%'
                             }
                         }
@@ -4263,6 +4439,10 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        function getRightWalkableBoundary(z) {
+            return 10;
+        }
+
         let prevTime = performance.now();
 
         function animate() {
@@ -4312,12 +4492,10 @@
                         let newX = characterGroup.position.x + normX * stepDist;
                         let newZ = characterGroup.position.z + normZ * stepDist;
 
-                        // 1. Batas Pulau (radius 21.5)
-                        const distFromCenter = Math.hypot(newX, newZ);
-                        if (distFromCenter > 21.5) {
-                            newX = (newX / distFromCenter) * 21.5;
-                            newZ = (newZ / distFromCenter) * 21.5;
-                        }
+                        // 1. Batas alas kotak, sisakan sedikit margin dari tepi maket.
+                        const rightEdge = getRightWalkableBoundary(newZ) - 0.8;
+                        newX = THREE.MathUtils.clamp(newX, -18.0, rightEdge);
+                        newZ = THREE.MathUtils.clamp(newZ, -16.0, 14.2);
 
                         // 2. Tabrakan Tembok Rumah (x: [-2.6, 5.4], z: [-8.8, -4.2])
                         if (newX > -2.6 && newX < 5.4 && newZ > -8.8 && newZ < -4.2) {
@@ -4497,6 +4675,11 @@
             }
 
             updateMistParticles(delta);
+
+            treeCanopies.forEach(({ canopy, phase }) => {
+                canopy.rotation.z = Math.sin(elapsed * 0.65 + phase) * 0.018;
+                canopy.rotation.x = Math.sin(elapsed * 0.48 + phase) * 0.012;
+            });
 
             cloudsGroup.rotation.y = elapsed * 0.025;
 
