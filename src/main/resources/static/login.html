@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Halaman masuk EverGlade — mockup antarmuka autentikasi.">
+    <title>Masuk - EverGlade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Hallmark · checked: 2026-11-08 · genre: modern-minimal
+         * built: Hallmark · redesign: full · scope: login · surface: clear glass · status: mockup
+         * Mockup murni frontend: tidak ada panggilan API autentikasi. Tombol Masuk/Daftar
+         * hanya memvalidasi visual lalu mengarahkan ke /index.html. Lihat docs/adr/0005.
+         * Token disalin dari :root index.html (sumber kebenaran design system) agar
+         * halaman ini saudara kandung dengan HUD aplikasi.
+         * Kontras pasangan ink/glass dihitung dengan contrast-check di index.html
+         * (ink di atas glass terburuk malam 8.0:1) dan berlaku sama di sini.
+         */
+        :root {
+            --font-family-base: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --color-bg-sky: #f7f9f7;
+
+            /* Ink: teks di atas kaca, gelap agar kontras di siang dan malam */
+            --ink: #1f2a24;
+            --ink-muted: #2a352e;
+            --ink-wash: rgba(31, 42, 36, 0.07);
+            --tile: rgba(31, 42, 36, 0.05);
+            --tile-edge: rgba(31, 42, 36, 0.1);
+
+            /* Kaca: putih hangat, gema kaca rumah kaca */
+            --glass-panel: rgba(255, 253, 247, 0.8);
+            --glass-edge: rgba(255, 255, 255, 0.8);
+            --glass-rim: rgba(255, 255, 255, 0.95);
+            --glass-undershade: rgba(31, 42, 36, 0.06);
+            --sheen-strong: rgba(255, 255, 255, 0.55);
+            --sheen-soft: rgba(255, 255, 255, 0.1);
+            --sheen-band: rgba(255, 255, 255, 0.3);
+            --sheen-trace: rgba(255, 255, 255, 0.2);
+            --depth-tint: rgba(120, 170, 150, 0.16);
+            --glass-blur: 28px;
+            --glass-panel-blur: 32px;
+
+            /* Aksen: hijau brand EverGlade, digelapkan agar lolos AA di atas kaca */
+            --accent: #1e7247;
+            --accent-strong: #176943;
+            --accent-text: #0b3a25;
+            --accent-tint: #e7f5ec;
+            --accent-tint-border: rgba(30, 114, 71, 0.32);
+            --accent-ink: #ffffff;
+
+            /* Sinyal sekunder: ikon saja (ambang 3:1 terpuh di index.html) */
+            --signal-drop: #0f6b7a;
+
+            /* Kaca gelap: toast */
+            --glass-dark: rgba(23, 32, 27, 0.88);
+            --glass-dark-edge: rgba(246, 245, 240, 0.16);
+            --glass-dark-ink: #f4f3ee;
+
+            /* Fokus & elevasi */
+            --color-focus-ring: #123f28;
+            --shadow-panel: 0 12px 20px rgba(23, 32, 27, 0.26);
+            --radius-cluster: 18px;
+            --radius-card: 22px;
+        }
+        * {
+            font-family: var(--font-family-base);
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-bg-sky);
+        }
+        /* Latar: langit halus dengan gema tint kedalaman, tanpa 3D agar mockup ringan */
+        .login-sky {
+            background:
+                radial-gradient(ellipse 60% 45% at 18% 12%, var(--depth-tint) 0%, rgba(120, 170, 150, 0) 70%),
+                radial-gradient(ellipse 50% 40% at 85% 88%, var(--depth-tint) 0%, rgba(120, 170, 150, 0) 70%),
+                linear-gradient(180deg, #f2f7f3 0%, var(--color-bg-sky) 55%, #eef5f0 100%);
+        }
+        /* Keluarga kaca: disalin dari index.html agar identik */
+        .glass-panel {
+            background-color: var(--glass-panel);
+            background-image: linear-gradient(118deg, var(--sheen-strong) 0%, var(--sheen-soft) 30%, var(--sheen-trace) 42%, var(--sheen-band) 48%, var(--sheen-trace) 56%, rgba(255, 255, 255, 0) 72%);
+            -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(2.2);
+            backdrop-filter: blur(var(--glass-panel-blur)) saturate(2.2);
+            border: 1px solid var(--glass-edge);
+            box-shadow: var(--shadow-panel), inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 var(--glass-undershade);
+        }
+        .glass-dark {
+            background: var(--glass-dark);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+            backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+            border: 1px solid var(--glass-dark-edge);
+            color: var(--glass-dark-ink);
+            box-shadow: var(--shadow-panel);
+        }
+        /* Pill tab: pola segmented nav aplikasi (tab-btn-*), versi dalam kartu */
+        .auth-tab {
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .auth-tab.active {
+            background-color: var(--accent);
+            color: var(--accent-ink);
+            box-shadow: 0 1px 3px rgba(23, 32, 27, 0.3);
+        }
+        .auth-tab:not(.active) {
+            color: #475569;
+        }
+        .auth-tab:not(.active):hover {
+            color: #0f172a;
+        }
+        /* Input: tile design system, bukan gaya bawaan Tailwind */
+        .field-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background-color: var(--tile);
+            border: 1px solid var(--tile-edge);
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .field-input::placeholder {
+            color: rgba(31, 42, 36, 0.4);
+            font-weight: 400;
+        }
+        .field-input:focus {
+            background-color: rgba(255, 255, 255, 0.72);
+            border-color: var(--accent-tint-border);
+            box-shadow: 0 0 0 3px rgba(30, 114, 71, 0.18);
+        }
+        .field-input.invalid {
+            border-color: #b91c1c;
+            box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.14);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 14px;
+            background-color: var(--accent);
+            color: var(--accent-ink);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-strong);
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(18, 63, 40, 0.35);
+        }
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        .link-muted {
+            color: var(--accent-text);
+            text-decoration: underline;
+            text-decoration-color: rgba(11, 58, 37, 0.35);
+            text-underline-offset: 3px;
+            cursor: pointer;
+        }
+        .link-muted:hover {
+            text-decoration-color: var(--accent-text);
+        }
+        .field-error {
+            display: none;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: #b91c1c;
+            margin-top: 4px;
+        }
+        .field-error.show {
+            display: block;
+        }
+        /* Toast glass gelap: pola toast aplikasi */
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 32px;
+            transform: translateX(-50%) translateY(16px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            padding: 10px 18px;
+            border-radius: var(--radius-cluster);
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 50;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        /* Aksen dekoratif: siluet daun tunggal, bukan clipart */
+        .leaf-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background-color: var(--accent);
+            color: var(--accent-ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(23, 32, 27, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="relative overflow-hidden">
+    <div class="login-sky fixed inset-0 flex items-center justify-center px-4">
+        <main class="glass-panel w-full max-w-md rounded-[22px] p-7 sm:p-9" aria-label="Kartu autentikasi">
+            <!-- Brand -->
+            <div class="flex flex-col items-center text-center gap-3 mb-6">
+                <div class="leaf-mark" aria-hidden="true">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-[#1f2a24] tracking-tight">EverGlade</h1>
+                    <p class="text-xs font-medium text-slate-500 mt-1">Rumah kaca digital untuk cabai rawit Anda</p>
+                </div>
+            </div>
+
+            <!-- Pill tab: Masuk | Daftar -->
+            <div class="flex items-center p-1 rounded-full bg-[rgba(31,42,36,0.06)] border border-[rgba(31,42,36,0.08)] mb-6" role="tablist" aria-label="Pilih mode autentikasi">
+                <button id="tab-login" class="auth-tab active flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="true" aria-controls="form-login" onclick="switchAuthTab('login')">Masuk</button>
+                <button id="tab-register" class="auth-tab flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="false" aria-controls="form-register" onclick="switchAuthTab('register')">Daftar</button>
+            </div>
+
+            <!-- Form Masuk -->
+            <form id="form-login" class="space-y-4" novalidate onsubmit="return submitMock(event, 'login')">
+                <div>
+                    <label for="login-identity" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Username atau Email</label>
+                    <input id="login-identity" type="text" class="field-input" placeholder="mis. pak_tani / tani@everglade.id" autocomplete="username">
+                    <p class="field-error" id="err-login-identity">Isi username atau email dulu ya.</p>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Password</label>
+                    <div class="relative">
+                        <input id="login-password" type="password" class="field-input pr-11" placeholder="••••••••" autocomplete="current-password">
+                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 cursor-pointer" aria-label="Tampilkan password" onclick="togglePassword('login-password', this)">
+                            <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="field-error" id="err-login-password">Password minimal 6 karakter.</p>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer">
+                        <input type="checkbox" class="w-3.5 h-3.5 rounded accent-[#1e7247] cursor-pointer">
+                        Ingat saya
+                    </label>
+                    <a class="link-muted text-xs font-semibold" onclick="showMockToast()">Lupa password?</a>
+                </div>
+                <button type="submit" class="btn-primary" data-label="Masuk ke Kebun">Masuk ke Kebun</button>
+            </form>
+
+            <!-- Form Daftar -->
+            <form id="form-register" class="space-y-4 hidden" novalidate onsubmit="return submitMock(event, 'register')">
+                <div>
+                    <label for="register-name" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Nama Lengkap</label>
+                    <input id="register-name" type="text" class="field-input" placeholder="mis. Rosyid Al Ansorri" autocomplete="name">
+                    <p class="field-error" id="err-register-name">Isi nama lengkap dulu ya.</p>
+                </div>
+                <div>
+                    <label for="register-email" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Email</label>
+                    <input id="register-email" type="email" class="field-input" placeholder="nama@contoh.id" autocomplete="email">
+                    <p class="field-error" id="err-register-email">Format email belum benar.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="register-password" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Password</label>
+                        <input id="register-password" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password">
+                        <p class="field-error" id="err-register-password">Minimal 6 karakter.</p>
+                    </div>
+                    <div>
+                        <label for="register-confirm" class="block text-xs font-semibold text-[#2a352e] mb-1.5">Konfirmasi</label>
+                        <input id="register-confirm" type="password" class="field-input" placeholder="••••••••" autocomplete="new-password">
+                        <p class="field-error" id="err-register-confirm">Konfirmasi tidak sama.</p>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" data-label="Buat Akun Baru">Buat Akun Baru</button>
+            </form>
+
+            <p class="text-center text-[11px] font-medium text-slate-400 mt-6 leading-relaxed">
+                Mockup antarmuka &mdash; autentikasi sungguhan menyusul<br>(lihat ADR-0005)
+            </p>
+        </main>
+    </div>
+
+    <div id="toast" class="glass-dark" role="status" aria-live="polite"></div>
+
+    <script>
+        /* Mockup murni: tidak ada fetch ke /api. Semua state hilang saat halaman berpindah. */
+        let activeTab = 'login';
+
+        function switchAuthTab(tab) {
+            activeTab = tab;
+            const isLogin = tab === 'login';
+            document.getElementById('tab-login').classList.toggle('active', isLogin);
+            document.getElementById('tab-login').setAttribute('aria-selected', isLogin);
+            document.getElementById('tab-register').classList.toggle('active', !isLogin);
+            document.getElementById('tab-register').setAttribute('aria-selected', !isLogin);
+            document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+            document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            btn.setAttribute('aria-label', showing ? 'Tampilkan password' : 'Sembunyikan password');
+            btn.style.opacity = showing ? '1' : '0.5';
+        }
+
+        function setFieldError(inputId, errId, invalid) {
+            document.getElementById(inputId).classList.toggle('invalid', invalid);
+            document.getElementById(errId).classList.toggle('show', invalid);
+            return !invalid;
+        }
+
+        function showMockToast() {
+            const toast = document.getElementById('toast');
+            toast.textContent = 'Lupa password belum diimplementasikan — masih mockup.';
+            toast.classList.add('show');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function submitMock(event, mode) {
+            event.preventDefault();
+            let ok = true;
+            if (mode === 'login') {
+                ok = setFieldError('login-identity', 'err-login-identity', !document.getElementById('login-identity').value.trim()) && ok;
+                ok = setFieldError('login-password', 'err-login-password', document.getElementById('login-password').value.length < 6) && ok;
+            } else {
+                ok = setFieldError('register-name', 'err-register-name', !document.getElementById('register-name').value.trim()) && ok;
+                const email = document.getElementById('register-email').value.trim();
+                ok = setFieldError('register-email', 'err-register-email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && ok;
+                ok = setFieldError('register-password', 'err-register-password', document.getElementById('register-password').value.length < 6) && ok;
+                ok = setFieldError('register-confirm', 'err-register-confirm', document.getElementById('register-confirm').value !== document.getElementById('register-password').value) && ok;
+            }
+            if (!ok) return false;
+            /* Simulasi proses auth lalu masuk aplikasi */
+            const btn = event.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Memproses…';
+            setTimeout(() => { window.location.href = '/index.html'; }, 800);
+            return false;
+        }
+
+        /* Bersihkan tanda error begitu pengguna mengetik lagi */
+        document.querySelectorAll('.field-input').forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('invalid');
+                const err = input.closest('div')?.querySelector('.field-error');
+                if (err) err.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html>
