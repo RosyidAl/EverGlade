@@ -6,10 +6,13 @@
 FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /build
 
+# Batasi penggunaan RAM Maven agar tidak terkena OOM Killer di VPS
+ENV MAVEN_OPTS="-Xmx512m -XX:+UseSerialGC"
+
 # Copy Maven wrapper and descriptor to cache dependency layer
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B || true
+RUN chmod +x mvnw && ./mvnw dependency:resolve -B
 
 # Copy application source code and compile production artifact
 COPY src/ src/
