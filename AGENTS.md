@@ -13,7 +13,7 @@ Guidelines, architecture context, and workflows for AI agents working in this re
   - **Data Access**: Spring Data JPA with MySQL (`db_manajemen_tanaman`)
   - **Schema Management**: Flyway DB migrations (`src/main/resources/db/migration/`)
   - **Frontend / Static UI**: `src/main/resources/static/` (HTML/JS web interface)
-  - **Configuration**: Environment variables via `.env` (see `.env.example`)
+  - **Configuration**: Environment variables via `.env` (lihat `.env.example`). Maven tidak otomatis memuat `.env`; saat menjalankan Maven secara manual di terminal, ekspor variabel terlebih dahulu (mis. `export DB_PASSWORD=...` atau jalankan script launcher).
 - **Agent Customizations**:
   - **Workspace Skills**: `.agents/skills/`
   - **Vendor Repositories**: `.agents/vendor/`
@@ -36,6 +36,7 @@ Execute backend commands from the project root directory:
   - Windows: `mvnw.cmd spring-boot:run` or `./run.cmd` / `./start-app.ps1`
 - **Run via Docker** (includes MySQL):
   - `docker compose up`
+  - Catatan: Pengaturan default menggunakan user `root`. Bila menggunakan non-root `DB_USER` pada volume baru, pastikan user tersebut telah dibuat dan diberikan hak akses penuh ke schema `db_manajemen_tanaman`.
 - **Package JAR**:
   - `./mvnw clean package -DskipTests`
 - **Database Migrations**:
