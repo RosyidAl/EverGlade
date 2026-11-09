@@ -3,6 +3,10 @@ services:
     image: mysql:8.4
     container_name: everglade-db
     restart: unless-stopped
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --innodb-log-buffer-size=16M
+      - --max-connections=50
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-everglade_db_secret}
       MYSQL_DATABASE: ${DB_NAME:-db_manajemen_tanaman}
