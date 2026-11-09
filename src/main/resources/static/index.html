@@ -754,6 +754,15 @@
         </div>
 
         <div class="dock-foot">
+            <div id="user-badge-section" class="dock-btn flex items-center justify-between cursor-default mb-1">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-6 h-6 rounded-full bg-[color:var(--accent-tint)] text-[color:var(--accent-text)] border border-[color:var(--accent-tint-border)] flex items-center justify-center font-bold text-[10px] shrink-0" id="user-initial">P</div>
+                    <span id="user-display-name" class="truncate text-xs font-semibold">Petani</span>
+                </div>
+                <button type="button" onclick="logoutSession()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold p-1 transition-colors ml-2" title="Keluar ke halaman masuk">
+                    Keluar
+                </button>
+            </div>
             <button id="btn-sound" onclick="toggleSound()" class="dock-btn" title="Efek suara lingkungan">
                 <span id="btn-sound-icon" class="flex items-center shrink-0" aria-hidden="true">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
@@ -1410,6 +1419,7 @@
         }
 
         function init() {
+            initUserSession();
             const container = document.getElementById('canvas-container');
 
             scene = new THREE.Scene();
@@ -2712,6 +2722,19 @@
             if (iconEl) iconEl.innerHTML = soundEnabled ? UI_ICONS.soundOn : UI_ICONS.soundOff;
             showToast(soundEnabled ? 'Audio SFX Aktif' : 'Audio SFX Nonaktif', soundEnabled ? 'soundOn' : 'soundOff');
             if (soundEnabled) playPop();
+        }
+
+        function initUserSession() {
+            const user = sessionStorage.getItem('everglade_user') || 'Petani';
+            const nameEl = document.getElementById('user-display-name');
+            const initialEl = document.getElementById('user-initial');
+            if (nameEl) nameEl.textContent = user;
+            if (initialEl) initialEl.textContent = user.charAt(0).toUpperCase();
+        }
+
+        function logoutSession() {
+            sessionStorage.removeItem('everglade_user');
+            window.location.href = '/login.html';
         }
 
         // --- Notification Toast ---

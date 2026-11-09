@@ -26,7 +26,7 @@ Bukan routing URL — tiga `<section>` saudara di-toggle lewat kelas Tailwind `h
 
 - `switchMainTab('3d')`, `('mgmt')`, `('analytics')` menukar kelas tombol aktif, menampilkan section, dan memicu renderer per tab (`renderManagementView()`, `refreshAnalyticsData()`).
 - **Aturan menambah tab/halaman baru:** tambah tombol di `<nav>` + section sibling + cabang di `switchMainTab()` — jangan membuat halaman HTML terpisah (lihat ADR-0003/0004).
-- **Halaman login** (`login.html`, hanya di branch `main`) adalah pengecualian: halaman statis terpisah dengan token yang disalin dari `:root` ini (ADR-0005).
+- **Halaman login** (`login.html`) adalah pengecualian: halaman statis terpisah dengan token yang disalin dari `:root` ini (ADR-0005).
 
 ## Design System "Clear Glass"
 

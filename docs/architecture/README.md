@@ -31,13 +31,13 @@ Dokumentasi arsitektur sistem manajemen tanaman dan pemantauan mikroklimat kebun
 └─────────────────────────────────────────────────────┘
 ```
 
-- **Satu proses, satu file frontend.** Tidak ada template engine, tidak ada build step frontend — seluruh UI hidup di `src/main/resources/static/index.html`.
+- **Satu proses backend monolit.** Halaman pembuka `/` me-redirect ke `login.html` (halaman mockup login & registrasi), lalu beralih ke UI dashboard utama di `src/main/resources/static/index.html`. Tidak ada template engine dan tidak ada build step frontend.
 - **API murni JSON** di bawah `/api/**`; halaman dilayani Spring Boot sebagai static resource.
-- **Weather adalah satu-satunya integrasi eksternal** (Open-Meteo, tanpa API key).
+- **Integrasi server eksternal:** backend mengintegrasikan Open-Meteo untuk telemetri cuaca. Sementara itu, browser memuat dependensi eksternal via CDN (Tailwind, Three.js, Google Fonts — rincian lengkap di [04 — Frontend](04-frontend.md)).
 
 ## Cara Membaca Kode Pertama Kali
 
-1. `DemoApplication.java` — titik masuk.
+1. `EverGladeApplication.java` — titik masuk.
 2. `controller/TanamanController.java` — contoh pola API paling lengkap.
 3. `db/migration/V1__initial_table.sql` — seluruh skema database.
 4. `static/index.html` — cari `switchMainTab()` untuk navigasi dan `init()` untuk bootstrap.

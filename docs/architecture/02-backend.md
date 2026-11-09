@@ -3,14 +3,14 @@
 ## Struktur Paket
 
 ```
-src/main/java/com/example/demo/
-├── DemoApplication.java      // titik masuk
-├── controller/               // 13 @RestController, base mapping /api/**
+src/main/java/com/everglade/app/
+├── EverGladeApplication.java // titik masuk
+├── controller/               // 13 @RestController (/api/**) + 1 @Controller (HomeController)
 ├── service/                  // 4 service: Tanaman, InventarisBahan, LogPemeriksaan, Weather
 ├── repository/               // 13 interface Spring Data JPA
 ├── entity/                   // 13 @Entity + 8 enum domain (tanpa @Entity)
 ├── dto/
-│   ├── request/              // payload masukan yang divalidasi
+│   ├── request/              // model payload masukan
 │   └── weather/              // model respons Open-Meteo
 ├── exception/
 │   └── GlobalExceptionHandler.java
@@ -43,7 +43,7 @@ src/main/java/com/example/demo/
 **Realitanya di kode ini (penting dipahami sebelum menambah fitur):**
 
 - Hanya **4 service** yang ada: `TanamanService`, `InventarisBahanService`, `LogPemeriksaanService`, `WeatherService`. Service dipakai ketika ada logika bisnis lintas tabel (validasi stok, komputasi status, dll).
-- **9 controller lain meng-autowire Repository langsung** (mis. `KondisiTanamanController` memegang `KondisiTanamanRepository`) — CRUD murni tanpa aturan bisnis. Ini disengaja agar CRUD sederhana tetap tipis.
+- **9 controller lain adalah REST controller (`@RestController`) yang meng-autowire Repository langsung** (mis. `KondisiTanamanController` memegang `KondisiTanamanRepository`) — CRUD murni tanpa aturan bisnis. Ini disengaja agar CRUD sederhana tetap tipis. Selain itu, terdapat `HomeController` (`@Controller`) yang menangani `GET /` dengan me-redirect ke `/login.html` tanpa memerlukan service maupun repository.
 - **Kaidah menambah fitur:**
   - CRUD polos → controller + repository (ikuti pola yang ada).
   - Ada aturan bisnis / lintas tabel → buat/ekspansi service, jangan menaruh logika di controller.

@@ -34,9 +34,11 @@ jobs:
       - name: Verify Container Health
         run: |
           echo "[INFO] Waiting for service to report healthy..."
+          APP_PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '\r')
+          TARGET_PORT="${APP_PORT:-8085}"
           for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:8085/ >/dev/null; then
-              echo "[SUCCESS] EverGlade is responding at http://127.0.0.1:8085/"
+            if curl -sf "http://127.0.0.1:${TARGET_PORT}/login.html" >/dev/null && curl -sf "http://127.0.0.1:${TARGET_PORT}/index.html" >/dev/null; then
+              echo "[SUCCESS] EverGlade is responding at http://127.0.0.1:${TARGET_PORT}/"
               docker compose ps
               exit 0
             fi

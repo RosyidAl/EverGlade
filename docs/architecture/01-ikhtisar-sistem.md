@@ -5,7 +5,7 @@
 EverGlade adalah **monolit Spring Boot tunggal** yang sekaligus:
 
 1. Melayani **API JSON** di `/api/**` (13 controller),
-2. Melayani **frontend statis** (`src/main/resources/static/index.html`) sebagai welcome page di `/`,
+2. Mengarahkan pembuka root `/` via redirect ke `/login.html` (mockup login), yang kemudian mengarah ke frontend utama `index.html` setelah submit,
 3. Menjadi satu-satunya pembicara dengan database.
 
 Tidak ada microservice, tidak ada gateway, tidak ada message queue. Deployment = satu image Docker + satu container MySQL.
@@ -24,7 +24,7 @@ Tidak ada microservice, tidak ada gateway, tidak ada message queue. Deployment =
 
 ## Alur Data Utama
 
-1. Browser memuat `/` → `index.html` (~5.100 baris) + CDN.
+1. Browser memuat `/` → diarahkan via redirect ke `/login.html`, lalu setelah submit mockup masuk ke `index.html` (~5.100 baris) + CDN.
 2. `init()` di index.html memanggil `fetch('/api/tanaman?hanyaAktif=true')` dan `fetch('/api/cuaca/current')`.
 3. Controller menerima permintaan → (kadang via Service) → Repository (Spring Data JPA) → MySQL.
 4. Response JSON dirender langsung ke DOM / tabel / chart tanpa framework.
