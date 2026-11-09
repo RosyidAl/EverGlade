@@ -47,6 +47,7 @@ jobs:
           done
           echo "[ERROR] EverGlade failed to start within 60 seconds."
           docker compose logs --tail 50 app
+          docker compose logs --tail 50 db
           exit 1
 
       - name: Clean Up Unused Docker Images
