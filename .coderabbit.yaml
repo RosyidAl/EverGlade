@@ -1,18 +1,81 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
 early_access: false
+tone_instructions: "Use concise, direct, and strictly technical language. Focus on code correctness, security, performance, and architecture. Do not use emojis or emoticons under any circumstances."
+
 reviews:
   profile: "assertive"
   request_changes_workflow: false
   high_level_summary: true
   poem: false
-  review_status: true
+  review_status: false
+  collapse_walkthrough: true
+  sequence_diagrams: false
+
   auto_review:
     enabled: true
+    auto_incremental_review: true
     drafts: false
     base_branches:
       - "master"
       - "main"
       - "feature/*"
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!dist/**"
+    - "!build/**"
+    - "!target/**"
+    - "!**/*.min.*"
+    - "!**/*.svg"
+    - "!.mvn/**"
+    - "!mvnw"
+    - "!mvnw.cmd"
+
+  path_instructions:
+    - path: "src/main/java/com/example/demo/controller/**"
+      instructions: >
+        Review controllers for proper HTTP method usage, input validation,
+        consistent response structure, and that they contain no business logic.
+        Controllers must delegate to service layer only.
+    - path: "src/main/java/com/example/demo/service/**"
+      instructions: >
+        Review services for correct @Transactional boundaries, proper exception
+        handling, and separation from persistence concerns. Services must not
+        use EntityManager directly or return JPA entities to the controller layer
+        without mapping to DTOs.
+    - path: "src/main/java/com/example/demo/repository/**"
+      instructions: >
+        Review repositories for correct Spring Data JPA query derivation,
+        N+1 query risks in custom @Query annotations, and proper use of
+        projections or DTOs for read-heavy queries.
+    - path: "src/main/java/com/example/demo/model/**"
+      instructions: >
+        Review JPA entities for correct mapping annotations, cascade types,
+        fetch strategies (prefer LAZY), proper equals/hashCode (use business key
+        or @Id, never rely on default), and that toString does not trigger
+        lazy-loaded collections.
+    - path: "src/main/resources/db/migration/**"
+      instructions: >
+        Review Flyway migrations for: correct version ordering (V{n}__{desc}.sql),
+        idempotency where possible, no destructive DDL (DROP TABLE/COLUMN) without
+        explicit justification, proper index creation for foreign keys, and that
+        column types match JPA entity field types.
+    - path: "src/main/resources/static/**"
+      instructions: >
+        Review frontend static files for XSS vulnerabilities in DOM manipulation,
+        proper escaping of user-generated content, and correct API endpoint usage.
+    - path: "src/main/resources/application.properties"
+      instructions: >
+        Flag any hardcoded credentials or secrets. Verify that sensitive values
+        use environment variable placeholders or Spring config encryption.
+        ddl-auto must remain 'validate'.
+
+  tools:
+    gitleaks:
+      enabled: true
+
 chat:
   auto_reply: true
