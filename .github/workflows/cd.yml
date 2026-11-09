@@ -29,7 +29,13 @@ jobs:
       - name: Deploy Docker Compose Stack
         run: |
           echo "[INFO] Building and deploying containers..."
-          docker compose up -d --build --remove-orphans
+          if ! docker compose up -d --build --remove-orphans; then
+            echo "[ERROR] Docker compose up failed. Dumping container logs..."
+            docker compose ps -a
+            docker compose logs --tail 100 db
+            docker compose logs --tail 100 app
+            exit 1
+          fi
 
       - name: Verify Container Health
         run: |
