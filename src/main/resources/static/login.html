@@ -216,11 +216,12 @@
             justify-content: center;
             box-shadow: 0 2px 8px rgba(23, 32, 27, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="relative overflow-hidden">
-    <div class="login-sky fixed inset-0 flex items-center justify-center px-4">
-        <main class="glass-panel w-full max-w-md rounded-[22px] p-7 sm:p-9" aria-label="Kartu autentikasi">
+<body class="relative min-h-screen bg-[color:var(--color-bg-sky)]">
+    <div class="login-sky min-h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <main class="glass-panel w-full max-w-md rounded-[22px] p-7 sm:p-9 my-auto" aria-label="Kartu autentikasi">
             <!-- Brand -->
             <div class="flex flex-col items-center text-center gap-3 mb-6">
                 <div class="leaf-mark" aria-hidden="true">
@@ -236,9 +237,9 @@
             </div>
 
             <!-- Pill tab: Masuk | Daftar -->
-            <div class="flex items-center p-1 rounded-full bg-[rgba(31,42,36,0.06)] border border-[rgba(31,42,36,0.08)] mb-6" role="tablist" aria-label="Pilih mode autentikasi">
-                <button id="tab-login" class="auth-tab active flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="true" aria-controls="form-login" onclick="switchAuthTab('login')">Masuk</button>
-                <button id="tab-register" class="auth-tab flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="false" aria-controls="form-register" onclick="switchAuthTab('register')">Daftar</button>
+            <div id="auth-tablist" class="flex items-center p-1 rounded-full bg-[rgba(31,42,36,0.06)] border border-[rgba(31,42,36,0.08)] mb-6" role="tablist" aria-label="Pilih mode autentikasi">
+                <button id="tab-login" class="auth-tab active flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="true" tabindex="0" aria-controls="form-login" onclick="switchAuthTab('login')">Masuk</button>
+                <button id="tab-register" class="auth-tab flex-1 px-4 py-1.5 rounded-full text-xs font-semibold" role="tab" aria-selected="false" tabindex="-1" aria-controls="form-register" onclick="switchAuthTab('register')">Daftar</button>
             </div>
 
             <!-- Form Masuk -->
@@ -266,7 +267,7 @@
                         <input type="checkbox" class="w-3.5 h-3.5 rounded accent-[#1e7247] cursor-pointer">
                         Ingat saya
                     </label>
-                    <a class="link-muted text-xs font-semibold" onclick="showMockToast()">Lupa password?</a>
+                    <button type="button" class="link-muted text-xs font-semibold bg-transparent border-0 p-0 cursor-pointer text-left" onclick="showMockToast()">Lupa password?</button>
                 </div>
                 <button type="submit" class="btn-primary" data-label="Masuk ke Kebun">Masuk ke Kebun</button>
             </form>
@@ -307,19 +308,36 @@
     <div id="toast" class="glass-dark" role="status" aria-live="polite"></div>
 
     <script>
-        /* Mockup murni: tidak ada fetch ke /api. Semua state hilang saat halaman berpindah. */
+        /* Mockup murni: tidak ada fetch ke /api. Data sesi disimpan di sessionStorage. */
         let activeTab = 'login';
 
         function switchAuthTab(tab) {
             activeTab = tab;
             const isLogin = tab === 'login';
-            document.getElementById('tab-login').classList.toggle('active', isLogin);
-            document.getElementById('tab-login').setAttribute('aria-selected', isLogin);
-            document.getElementById('tab-register').classList.toggle('active', !isLogin);
-            document.getElementById('tab-register').setAttribute('aria-selected', !isLogin);
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            tabLogin.classList.toggle('active', isLogin);
+            tabLogin.setAttribute('aria-selected', isLogin);
+            tabLogin.setAttribute('tabindex', isLogin ? '0' : '-1');
+            tabRegister.classList.toggle('active', !isLogin);
+            tabRegister.setAttribute('aria-selected', !isLogin);
+            tabRegister.setAttribute('tabindex', !isLogin ? '0' : '-1');
             document.getElementById('form-login').classList.toggle('hidden', !isLogin);
             document.getElementById('form-register').classList.toggle('hidden', isLogin);
+            if (isLogin) {
+                tabLogin.focus();
+            } else {
+                tabRegister.focus();
+            }
         }
+
+        // Navigasi keyboard Left/Right pada tablist
+        document.getElementById('auth-tablist').addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                switchAuthTab(activeTab === 'login' ? 'register' : 'login');
+            }
+        });
 
         function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
@@ -330,14 +348,23 @@
         }
 
         function setFieldError(inputId, errId, invalid) {
-            document.getElementById(inputId).classList.toggle('invalid', invalid);
-            document.getElementById(errId).classList.toggle('show', invalid);
+            const input = document.getElementById(inputId);
+            const err = document.getElementById(errId);
+            input.classList.toggle('invalid', invalid);
+            input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+            if (invalid) {
+                input.setAttribute('aria-describedby', errId);
+                err.classList.add('show');
+            } else {
+                input.removeAttribute('aria-describedby');
+                err.classList.remove('show');
+            }
             return !invalid;
         }
 
-        function showMockToast() {
+        function showMockToast(message) {
             const toast = document.getElementById('toast');
-            toast.textContent = 'Lupa password belum diimplementasikan — masih mockup.';
+            toast.textContent = message || 'Lupa password belum diimplementasikan — masih mockup.';
             toast.classList.add('show');
             clearTimeout(toast._timer);
             toast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
@@ -356,7 +383,19 @@
                 ok = setFieldError('register-password', 'err-register-password', document.getElementById('register-password').value.length < 6) && ok;
                 ok = setFieldError('register-confirm', 'err-register-confirm', document.getElementById('register-confirm').value !== document.getElementById('register-password').value) && ok;
             }
-            if (!ok) return false;
+            if (!ok) {
+                showMockToast('Mohon lengkapi atau periksa kembali input formulir.');
+                return false;
+            }
+            /* Simpan sesi mockup ke sessionStorage */
+            let userName = 'Petani';
+            if (mode === 'login') {
+                userName = document.getElementById('login-identity').value.trim() || userName;
+            } else {
+                userName = document.getElementById('register-name').value.trim() || userName;
+            }
+            sessionStorage.setItem('everglade_user', userName);
+
             /* Simulasi proses auth lalu masuk aplikasi */
             const btn = event.target.querySelector('button[type="submit"]');
             btn.disabled = true;
@@ -369,7 +408,9 @@
         document.querySelectorAll('.field-input').forEach(input => {
             input.addEventListener('input', () => {
                 input.classList.remove('invalid');
-                const err = input.closest('div')?.querySelector('.field-error');
+                input.setAttribute('aria-invalid', 'false');
+                input.removeAttribute('aria-describedby');
+                const err = document.getElementById('err-' + input.id);
                 if (err) err.classList.remove('show');
             });
         });

@@ -7,11 +7,13 @@ Guidelines, architecture context, and workflows for AI agents working in this re
 ## 1. Project Overview & Architecture
 
 - **Project**: EverGlade (Plant Management System / Sistem Manajemen Tanaman)
-- **Backend Application (`demo/`)**:
+- **Backend Application**:
+  - **Package**: `com.everglade.app`
   - **Framework**: Spring Boot 4.x / Java 21
   - **Data Access**: Spring Data JPA with MySQL (`db_manajemen_tanaman`)
-  - **Schema Management**: Flyway DB migrations (`demo/src/main/resources/db/migration/`)
-  - **Frontend / Static UI**: `demo/src/main/resources/static/` (HTML/JS web interface)
+  - **Schema Management**: Flyway DB migrations (`src/main/resources/db/migration/`)
+  - **Frontend / Static UI**: `src/main/resources/static/` (HTML/JS web interface)
+  - **Configuration**: Environment variables via `.env` (see `.env.example`)
 - **Agent Customizations**:
   - **Workspace Skills**: `.agents/skills/`
   - **Vendor Repositories**: `.agents/vendor/`
@@ -21,7 +23,7 @@ Guidelines, architecture context, and workflows for AI agents working in this re
 
 ## 2. Common Development Workflows & Commands
 
-Execute backend commands from the `demo/` subdirectory (or prefix with `demo/`):
+Execute backend commands from the project root directory:
 
 - **Compile**:
   - Linux/WSL: `./mvnw clean compile`
@@ -32,10 +34,12 @@ Execute backend commands from the `demo/` subdirectory (or prefix with `demo/`):
 - **Run Application**:
   - Linux/WSL: `./mvnw spring-boot:run`
   - Windows: `mvnw.cmd spring-boot:run` or `./run.cmd` / `./start-app.ps1`
+- **Run via Docker** (includes MySQL):
+  - `docker compose up`
 - **Package JAR**:
   - `./mvnw clean package -DskipTests`
 - **Database Migrations**:
-  - Database schema changes **must** be implemented via new Flyway migration scripts in `demo/src/main/resources/db/migration/` using the versioning format: `V{version}__{description}.sql` (e.g. `V2__add_sensor_data.sql`).
+  - Database schema changes **must** be implemented via new Flyway migration scripts in `src/main/resources/db/migration/` using the versioning format: `V{version}__{description}.sql` (e.g. `V2__add_sensor_data.sql`).
   - Do **not** rely on `hibernate.ddl-auto=update`; `ddl-auto` is set to `validate`.
 
 ---

@@ -37,7 +37,7 @@ Durasi khas ±3 menit. `checkout` dilakukan di workspace runner — folder `/roo
 | Service | Image | Peran |
 |---|---|---|
 | `db` (`everglade-db`) | `mysql:8.4` | healthcheck `mysqladmin ping`; volume `mysql_data`; `V1__initial_table.sql` di-mount ke `docker-entrypoint-initdb.d/` (hanya efektif saat volume baru) |
-| `app` (`everglade-app`) | build dari Dockerfile | `127.0.0.1:8085 -> 8080`; `depends_on: db (service_healthy)`; env `SPRING_DATASOURCE_*` menimpa properties |
+| `app` (`everglade-app`) | build dari Dockerfile | `127.0.0.1:${APP_PORT:-8085} -> 8080` (port host dapat dikonfigurasi via `APP_PORT`); `depends_on: db (service_healthy)`; env `SPRING_DATASOURCE_*` menimpa properties |
 
 Aplikasi hanya ter-expose ke **localhost VPS** (127.0.0.1). Akses publik HTTPS melewati Tailscale Funnel — detail di ADR-0001.
 
@@ -54,4 +54,5 @@ docker: everglade-app (healthy), everglade-db (healthy)
 
 - Health check CD memakai `curl -sf` → redirect 302 **lolos** (bukan gagal), error ≥400 gagal.
 - `docker image prune -f` berjalan otomatis (`if: always()`) — image lama tidak menumpuk.
-- Deploy bersifat deklaratif: seluruh keadaan berasal dari commit `master` + volume `mysql_data`. Tidak ada SSH manual yang dibutuhkan untuk deploy rutin.
+- Deploy dibedakan antara push deployment (menggunakan commit master) dan manual deployment via `workflow_dispatch` (menggunakan commit dari ref yang dipilih).
+- Keadaan runtime persisten bergantung pada konfigurasi deployment (termasuk kredensial database pada `.env` yang harus dijaga aman dan direstorasi bersama volume agar Compose dan aplikasi selalu memakai kredensial yang sinkron) serta volume data `mysql_data`. Tidak ada SSH manual yang dibutuhkan untuk deploy rutin.

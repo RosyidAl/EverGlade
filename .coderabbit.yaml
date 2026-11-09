@@ -35,23 +35,23 @@ reviews:
     - "!mvnw.cmd"
 
   path_instructions:
-    - path: "src/main/java/com/example/demo/controller/**"
+    - path: "src/main/java/com/everglade/app/controller/**"
       instructions: >
         Review controllers for proper HTTP method usage, input validation,
         consistent response structure, and that they contain no business logic.
         Controllers must delegate to service layer only.
-    - path: "src/main/java/com/example/demo/service/**"
+    - path: "src/main/java/com/everglade/app/service/**"
       instructions: >
         Review services for correct @Transactional boundaries, proper exception
         handling, and separation from persistence concerns. Services must not
         use EntityManager directly or return JPA entities to the controller layer
         without mapping to DTOs.
-    - path: "src/main/java/com/example/demo/repository/**"
+    - path: "src/main/java/com/everglade/app/repository/**"
       instructions: >
         Review repositories for correct Spring Data JPA query derivation,
         N+1 query risks in custom @Query annotations, and proper use of
         projections or DTOs for read-heavy queries.
-    - path: "src/main/java/com/example/demo/model/**"
+    - path: "src/main/java/com/everglade/app/entity/**"
       instructions: >
         Review JPA entities for correct mapping annotations, cascade types,
         fetch strategies (prefer LAZY), proper equals/hashCode (use business key
