@@ -30,11 +30,16 @@ jobs:
         run: |
           echo "[INFO] Building and deploying containers..."
           if ! docker compose up -d --build --remove-orphans; then
-            echo "[ERROR] Docker compose up failed. Dumping container logs..."
-            docker compose ps -a
-            docker compose logs --tail 100 db
-            docker compose logs --tail 100 app
-            exit 1
+            echo "[WARN] Initial deployment failed (likely corrupted/hung database volume from previous interrupted run)."
+            echo "[INFO] Attempting self-healing recovery by resetting database volume..."
+            docker compose down -v
+            if ! docker compose up -d --build --remove-orphans; then
+              echo "[ERROR] Deployment failed even after volume recovery! Dumping container logs..."
+              docker compose ps -a
+              docker compose logs --tail 100 db
+              docker compose logs --tail 100 app
+              exit 1
+            fi
           fi
 
       - name: Verify Container Health
