@@ -93,12 +93,21 @@ jobs:
 
       - name: Deploy Docker Compose Stack
         run: |
+          echo "[INFO] Cleaning up any dangling db containers on VPS..."
+          docker stop everglade-db 2>/dev/null || true
+          docker rm -f everglade-db 2>/dev/null || true
+          docker network disconnect -f everglade_everglade-network everglade-db 2>/dev/null || true
+
           echo "[INFO] Building and deploying containers..."
           if ! docker compose up -d --build --remove-orphans; then
-            echo "[ERROR] Deployment failed! Dumping container logs..."
-            docker compose ps -a
-            docker compose logs --tail 100 app
-            exit 1
+            echo "[WARN] Compose up failed, attempting clean network down and retry..."
+            docker compose down --remove-orphans 2>/dev/null || true
+            if ! docker compose up -d --build --remove-orphans; then
+              echo "[ERROR] Deployment failed! Dumping container logs..."
+              docker compose ps -a
+              docker compose logs --tail 100 app
+              exit 1
+            fi
           fi
 
       - name: Verify Container Health
