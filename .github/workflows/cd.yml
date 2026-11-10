@@ -24,9 +24,9 @@ jobs:
 
       - name: Verify Environment Configuration
         env:
-          AZURE_DB_URL: ${{ secrets.AZURE_DB_URL }}
-          AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
-          AZURE_DB_USER: ${{ secrets.AZURE_DB_USER }}
+          AZURE_DB_URL: ${{ secrets.AZURE_DB_URL || secrets.DB_URL }}
+          AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD || secrets.DB_PASSWORD }}
+          AZURE_DB_USER: ${{ secrets.AZURE_DB_USER || secrets.DB_USER }}
         run: |
           RUNNER_IP=$(curl -sf https://api.ipify.org || curl -sf https://ifconfig.me || echo "unknown")
           echo "[INFO] VPS Runner Public IP: $RUNNER_IP"
