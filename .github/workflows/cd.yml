@@ -106,16 +106,16 @@ jobs:
           echo "[INFO] Waiting for service to report healthy..."
           APP_PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '\r')
           TARGET_PORT="${APP_PORT:-8085}"
-          for i in $(seq 1 100); do
+          for i in $(seq 1 120); do
             if curl -sf "http://127.0.0.1:${TARGET_PORT}/login.html" >/dev/null && curl -sf "http://127.0.0.1:${TARGET_PORT}/index.html" >/dev/null; then
               echo "[SUCCESS] EverGlade is responding at http://127.0.0.1:${TARGET_PORT}/"
               docker compose ps
               exit 0
             fi
-            echo "Waiting for app to start... ($i/100)"
+            echo "Waiting for app to start... ($i/120)"
             sleep 2
           done
-          echo "[ERROR] EverGlade failed to start within 200 seconds."
+          echo "[ERROR] EverGlade failed to start within 240 seconds."
           docker compose logs --tail 100 app
           exit 1
 
