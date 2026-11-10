@@ -24,6 +24,7 @@ jobs:
 
       - name: Verify Environment Configuration
         env:
+          AZURE_DB_URL: ${{ secrets.AZURE_DB_URL }}
           AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
           AZURE_DB_USER: ${{ secrets.AZURE_DB_USER }}
         run: |
@@ -46,6 +47,10 @@ jobs:
             cp .env.example .env
           fi
 
+          if [ -n "$AZURE_DB_URL" ]; then
+            set_compose_env "DB_URL" "$AZURE_DB_URL"
+          fi
+
           if [ -n "$AZURE_DB_USER" ]; then
             set_compose_env "DB_USER" "$AZURE_DB_USER"
           fi
@@ -54,6 +59,33 @@ jobs:
             # Escape $ to $$ so Docker Compose does not interpret it as variable interpolation
             COMPOSE_PASSWORD="${AZURE_DB_PASSWORD//\$/\$\$}"
             set_compose_env "DB_PASSWORD" "$COMPOSE_PASSWORD"
+          fi
+
+      - name: Verify Database Reachability
+        run: |
+          TARGET_URL=$(grep -E '^DB_URL=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+          DB_HOST=$(echo "$TARGET_URL" | sed -n 's/.*:\/\/\([^:\/?]*\).*/\1/p')
+          DB_PORT=$(echo "$TARGET_URL" | sed -n 's/.*:\/\/[^:]*:\([0-9]*\).*/\1/p')
+          DB_PORT="${DB_PORT:-3306}"
+          CURRENT_USER=$(grep -E '^DB_USER=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+          CURRENT_PASS=$(grep -E '^DB_PASSWORD=' .env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+
+          if [ "$CURRENT_USER" = "your_azure_user" ] || [ "$CURRENT_PASS" = "your_azure_password" ]; then
+            echo "::warning::[WARNING] DB_USER or DB_PASSWORD is using a dummy placeholder! Please configure AZURE_DB_USER and AZURE_DB_PASSWORD in GitHub Repository Secrets (or in .env on the VPS)."
+          fi
+
+          if [ -n "$DB_HOST" ] && [ "$DB_HOST" != "localhost" ] && [ "$DB_HOST" != "127.0.0.1" ] && [ "$DB_HOST" != "db" ]; then
+            echo "[INFO] Testing TCP connection to database server: $DB_HOST on port $DB_PORT..."
+            if timeout 5 bash -c "</dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
+              echo "[SUCCESS] TCP connection to $DB_HOST:$DB_PORT succeeded!"
+            else
+              RUNNER_IP=$(curl -sf https://api.ipify.org || curl -sf https://ifconfig.me || echo "unknown")
+              echo "::error::[NETWORK ERROR] Cannot reach $DB_HOST:$DB_PORT from runner IP: $RUNNER_IP"
+              echo "::error::Please verify that:"
+              echo "::error::1. The Azure MySQL server is RUNNING (not in Stopped state in Azure Portal)."
+              echo "::error::2. IP $RUNNER_IP is added to Azure Database for MySQL Firewall rules (or allow 0.0.0.0-255.255.255.255)."
+              echo "::error::3. 'Allow public access from any Azure service' is enabled in Azure Portal Networking settings."
+            fi
           fi
 
       - name: Deploy Docker Compose Stack
