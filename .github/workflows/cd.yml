@@ -20,26 +20,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify Environment Configuration
+        env:
+          AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
+          AZURE_DB_USER: ${{ secrets.AZURE_DB_USER }}
         run: |
           if [ ! -f .env ]; then
             echo "[INFO] .env not found, initializing from .env.example..."
             cp .env.example .env
+          fi
+          if [ -n "$AZURE_DB_PASSWORD" ]; then
+            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$AZURE_DB_PASSWORD|" .env
+          fi
+          if [ -n "$AZURE_DB_USER" ]; then
+            sed -i "s|^DB_USER=.*|DB_USER=$AZURE_DB_USER|" .env
           fi
 
       - name: Deploy Docker Compose Stack
         run: |
           echo "[INFO] Building and deploying containers..."
           if ! docker compose up -d --build --remove-orphans; then
-            echo "[WARN] Initial deployment failed (likely corrupted/hung database volume from previous interrupted run)."
-            echo "[INFO] Attempting self-healing recovery by resetting database volume..."
-            docker compose down -v
-            if ! docker compose up -d --build --remove-orphans; then
-              echo "[ERROR] Deployment failed even after volume recovery! Dumping container logs..."
-              docker compose ps -a
-              docker compose logs --tail 100 db
-              docker compose logs --tail 100 app
-              exit 1
-            fi
+            echo "[ERROR] Deployment failed! Dumping container logs..."
+            docker compose ps -a
+            docker compose logs --tail 100 app
+            exit 1
           fi
 
       - name: Verify Container Health
@@ -58,7 +61,6 @@ jobs:
           done
           echo "[ERROR] EverGlade failed to start within 60 seconds."
           docker compose logs --tail 50 app
-          docker compose logs --tail 50 db
           exit 1
 
       - name: Clean Up Unused Docker Images
