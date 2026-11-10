@@ -6,6 +6,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: production-deploy
   cancel-in-progress: false
@@ -24,15 +27,29 @@ jobs:
           AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
           AZURE_DB_USER: ${{ secrets.AZURE_DB_USER }}
         run: |
+          set_compose_env() {
+            key="$1"
+            val="$2"
+            if [ -f .env ]; then
+              grep -v "^${key}=" .env > .env.tmp 2>/dev/null || true
+              mv .env.tmp .env
+            fi
+            printf '%s=%s\n' "$key" "$val" >> .env
+          }
+
           if [ ! -f .env ]; then
             echo "[INFO] .env not found, initializing from .env.example..."
             cp .env.example .env
           fi
-          if [ -n "$AZURE_DB_PASSWORD" ]; then
-            sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$AZURE_DB_PASSWORD|" .env
-          fi
+
           if [ -n "$AZURE_DB_USER" ]; then
-            sed -i "s|^DB_USER=.*|DB_USER=$AZURE_DB_USER|" .env
+            set_compose_env "DB_USER" "$AZURE_DB_USER"
+          fi
+
+          if [ -n "$AZURE_DB_PASSWORD" ]; then
+            # Escape $ to $$ so Docker Compose does not interpret it as variable interpolation
+            COMPOSE_PASSWORD="${AZURE_DB_PASSWORD//\$/\$\$}"
+            set_compose_env "DB_PASSWORD" "$COMPOSE_PASSWORD"
           fi
 
       - name: Deploy Docker Compose Stack

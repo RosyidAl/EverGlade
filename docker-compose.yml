@@ -10,8 +10,8 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-azure}
       SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:mysql://mysql-project.mysql.database.azure.com:3306/db_manajemen_tanaman?sslMode=REQUIRED&serverTimezone=UTC}
-      SPRING_DATASOURCE_USERNAME: ${DB_USER:-AlAnsorri}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:?DB_USER must be set in .env}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -30,7 +30,8 @@ services:
       - --innodb-log-buffer-size=16M
       - --max-connections=50
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-everglade_db_secret}
+      # LOCAL_DB_PASSWORD allows a dedicated local DB password; defaults to DB_PASSWORD or fallback secret.
+      MYSQL_ROOT_PASSWORD: ${LOCAL_DB_PASSWORD:-${DB_PASSWORD:-everglade_db_secret}}
       MYSQL_DATABASE: ${DB_NAME:-db_manajemen_tanaman}
     volumes:
       - mysql_data:/var/lib/mysql
