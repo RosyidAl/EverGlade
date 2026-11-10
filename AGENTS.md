@@ -57,7 +57,20 @@ Execute backend commands from the project root directory:
 
 ---
 
-## 4. Skills & Progressive Disclosure
+## 4. Handling Code Review & CodeRabbit Feedback
+
+When the user submits code review comments or automated reviewer feedback (e.g., CodeRabbit):
+
+- **Problem Separation**: Treat each block separated by a blank line or bullet item as a distinct, independent issue.
+- **Verification First**: Verify each finding against the actual codebase; fix only valid issues and avoid introducing regressions.
+- **Required Response Format**: When presenting solved issues, structure the response strictly point-by-point:
+  1. **Masalah**: Deskripsi/poin masalah yang dilaporkan.
+  2. **Solusi / Address**: Cara masalah tersebut diselesaikan atau ditangani pada kode.
+  *(Ulangi pola ini secara berurutan untuk setiap masalah berikutnya).*
+
+---
+
+## 5. Skills & Progressive Disclosure
 
 Workspace skills are located in `.agents/skills/`. The agent loads skill descriptions on demand to keep context lean:
 
