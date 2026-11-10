@@ -9,7 +9,7 @@ services:
       - "127.0.0.1:${APP_PORT:-8085}:8080"
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-azure}
-      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:mysql://mysql-project.mysql.database.azure.com:3306/db_manajemen_tanaman?sslMode=REQUIRED&enabledTLSProtocols=TLSv1.2,TLSv1.3&connectTimeout=15000&socketTimeout=30000&serverTimezone=UTC}
+      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:mysql://mysql-project.mysql.database.azure.com:3306/db_manajemen_tanaman?sslMode=REQUIRED&enabledTLSProtocols=TLSv1.2,TLSv1.3&connectTimeout=30000&nullCatalogMeansCurrent=true&allowPublicKeyRetrieval=true&serverTimezone=UTC}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:?DB_USER must be set in .env}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
@@ -50,6 +50,8 @@ services:
 networks:
   everglade-network:
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
 
 volumes:
   mysql_data:
