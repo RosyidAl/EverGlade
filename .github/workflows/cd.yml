@@ -27,6 +27,10 @@ jobs:
           AZURE_DB_PASSWORD: ${{ secrets.AZURE_DB_PASSWORD }}
           AZURE_DB_USER: ${{ secrets.AZURE_DB_USER }}
         run: |
+          RUNNER_IP=$(curl -sf https://api.ipify.org || curl -sf https://ifconfig.me || echo "unknown")
+          echo "[INFO] VPS Runner Public IP: $RUNNER_IP"
+          echo "[INFO] Ensure this IP is whitelisted in Azure MySQL Networking Firewall rules."
+
           set_compose_env() {
             key="$1"
             val="$2"
@@ -67,17 +71,17 @@ jobs:
           echo "[INFO] Waiting for service to report healthy..."
           APP_PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '\r')
           TARGET_PORT="${APP_PORT:-8085}"
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if curl -sf "http://127.0.0.1:${TARGET_PORT}/login.html" >/dev/null && curl -sf "http://127.0.0.1:${TARGET_PORT}/index.html" >/dev/null; then
               echo "[SUCCESS] EverGlade is responding at http://127.0.0.1:${TARGET_PORT}/"
               docker compose ps
               exit 0
             fi
-            echo "Waiting for app to start... (\$i/30)"
+            echo "Waiting for app to start... ($i/60)"
             sleep 2
           done
-          echo "[ERROR] EverGlade failed to start within 60 seconds."
-          docker compose logs --tail 50 app
+          echo "[ERROR] EverGlade failed to start within 120 seconds."
+          docker compose logs --tail 100 app
           exit 1
 
       - name: Clean Up Unused Docker Images
