@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/rosyidal/everglade:latest
     container_name: everglade-app
     restart: unless-stopped
     ports:
