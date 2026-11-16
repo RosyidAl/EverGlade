@@ -8,19 +8,59 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: production-deploy
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy to fatisda-l0125065
-    runs-on: self-hosted
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lowercase image name
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to fatisda-l0125065
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify Environment Configuration
         env:
@@ -88,6 +128,7 @@ jobs:
               echo "::error::1. The Azure MySQL server is RUNNING (not in Stopped state in Azure Portal)."
               echo "::error::2. IP $RUNNER_IP is added to Azure Database for MySQL Firewall rules (or allow 0.0.0.0-255.255.255.255)."
               echo "::error::3. 'Allow public access from any Azure service' is enabled in Azure Portal Networking settings."
+              exit 1
             fi
           fi
 
@@ -98,11 +139,12 @@ jobs:
           docker rm -f everglade-db 2>/dev/null || true
           docker network disconnect -f everglade_everglade-network everglade-db 2>/dev/null || true
 
-          echo "[INFO] Building and deploying containers..."
-          if ! docker compose up -d --build --remove-orphans; then
+          echo "[INFO] Pulling and deploying containers..."
+          docker compose pull
+          if ! docker compose up -d --remove-orphans; then
             echo "[WARN] Compose up failed, attempting clean network down and retry..."
             docker compose down --remove-orphans 2>/dev/null || true
-            if ! docker compose up -d --build --remove-orphans; then
+            if ! docker compose up -d --remove-orphans; then
               echo "[ERROR] Deployment failed! Dumping container logs..."
               docker compose ps -a
               docker compose logs --tail 100 app
